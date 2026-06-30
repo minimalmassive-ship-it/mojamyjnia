@@ -64,6 +64,29 @@ function App() {
     }
   }, []);
 
+  const handleSearch = async (query: string) => {
+    setCitySearch(query);
+    if (query.length < 3) {
+      return;
+    }
+    
+    setIsSearchingCity(true);
+    try {
+      // Ograniczamy wyszukiwanie tylko do miast/miejscowości żeby nie znajdowało bankomatów ani restauracji
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pl&featuretype=settlement`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        setUserLoc([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        setHasLocationPermission(true);
+      }
+    } catch (error) {
+      console.error('Błąd wyszukiwania:', error);
+    } finally {
+      setIsSearchingCity(false);
+    }
+  };
+
   const handleCitySearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!citySearch.trim()) return;

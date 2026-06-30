@@ -5,6 +5,7 @@ import L from 'leaflet';
 import { type WashStation, calculatePoints, MAX_POINTS } from '../api';
 import { Check, X, Navigation } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import useSupercluster from 'use-supercluster';
 
 // Funkcja pomocnicza do kolorów na mapie i w UI
 export const getScoreColor = (points: number) => {
@@ -14,7 +15,24 @@ export const getScoreColor = (points: number) => {
   return 'bg-dark-surfaceHover text-gray-300 border-dark-border'; // reszta neutralna
 };
 
-const createCustomIcon = (points: number, isSponsored: boolean) => {
+// SVG dla nieocenionej myjni (kropelka)
+const defaultIconHtml = `
+  <div class="relative w-8 h-8 rounded-full shadow-lg border-2 bg-dark-surfaceHover border-dark-border text-brand-blue flex items-center justify-center">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+  </div>
+`;
+
+const createCustomIcon = (points: number, isSponsored: boolean, isRated: boolean) => {
+  if (!isRated) {
+    return L.divIcon({
+      html: defaultIconHtml,
+      className: 'custom-leaflet-icon',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
+    });
+  }
+
   const colorClass = getScoreColor(points);
   const html = `
     <div class="relative w-8 h-8 rounded-full shadow-lg border-2 flex items-center justify-center font-bold text-sm ${colorClass} ${isSponsored ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-dark-bg scale-110' : ''}">
@@ -27,6 +45,17 @@ const createCustomIcon = (points: number, isSponsored: boolean) => {
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     popupAnchor: [0, -16]
+  });
+};
+
+const createClusterIcon = (count: number) => {
+  return L.divIcon({
+    html: `<div class="w-10 h-10 bg-brand-blue/90 backdrop-blur-md rounded-full border-2 border-white text-white font-bold flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+            ${count}
+           </div>`,
+    className: 'custom-marker-cluster',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
   });
 };
 
@@ -45,7 +74,7 @@ const LocationUpdater = ({ center }: { center: [number, number] }) => {
   return null;
 };
 
-// Nowy komponent do śledzenia bounds mapy i filtrowania stacji
+// Nowy komponent do klastrowania z use-supercluster
 const MarkersLayer = ({ stations, onNavigate, onSurveyOpen }: { 
   stations: WashStation[], 
   onNavigate: (s: WashStation) => void, 
@@ -53,39 +82,77 @@ const MarkersLayer = ({ stations, onNavigate, onSurveyOpen }: {
 }) => {
   const map = useMap();
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
+  const [zoom, setZoom] = useState(map.getZoom());
 
   useMapEvents({
     moveend: () => {
       setBounds(map.getBounds());
+      setZoom(map.getZoom());
     },
     zoomend: () => {
       setBounds(map.getBounds());
+      setZoom(map.getZoom());
     }
   });
 
-  // Ustawienie początkowych bounds po załadowaniu
   useEffect(() => {
     if (!bounds) {
       setBounds(map.getBounds());
+      setZoom(map.getZoom());
     }
   }, [map, bounds]);
 
-  // Filtrujemy tylko te myjnie, które są w widocznym oknie mapy (+ mały margines), 
-  // żeby nie crashować przeglądarki 4000 markerami.
-  const visibleStations = useMemo(() => {
-    if (!bounds) return [];
-    return stations.filter(s => bounds.contains([s.lat, s.lng]));
-  }, [stations, bounds]);
+  const points = useMemo(() => {
+    return stations.map(station => ({
+      type: "Feature" as const,
+      properties: { cluster: false, stationId: station.id, category: "car_wash", station },
+      geometry: { type: "Point" as const, coordinates: [station.lng, station.lat] }
+    }));
+  }, [stations]);
+
+  const { clusters, supercluster } = useSupercluster({
+    points,
+    bounds: bounds ? [
+      bounds.getSouthWest().lng,
+      bounds.getSouthWest().lat,
+      bounds.getNorthEast().lng,
+      bounds.getNorthEast().lat
+    ] : undefined,
+    zoom,
+    options: { radius: 75, maxZoom: 14 }
+  });
 
   return (
     <>
-      {visibleStations.map(station => {
+      {clusters.map(cluster => {
+        const [longitude, latitude] = cluster.geometry.coordinates;
+        const { cluster: isCluster, point_count: pointCount, station } = cluster.properties;
+
+        if (isCluster) {
+          return (
+            <Marker
+              key={`cluster-${cluster.id}`}
+              position={[latitude, longitude]}
+              icon={createClusterIcon(pointCount)}
+              eventHandlers={{
+                click: () => {
+                  const expansionZoom = Math.min(
+                    supercluster.getClusterExpansionZoom(cluster.id as number),
+                    18
+                  );
+                  map.setView([latitude, longitude], expansionZoom, { animate: true });
+                }
+              }}
+            />
+          );
+        }
+
         const points = station.isRated ? calculatePoints(station.features) : 0;
         return (
           <Marker 
             key={station.id} 
-            position={[station.lat, station.lng]} 
-            icon={createCustomIcon(points, false)}
+            position={[latitude, longitude]} 
+            icon={createCustomIcon(points, false, !!station.isRated)}
           >
             <Popup className="custom-popup">
               <div className="w-64">
