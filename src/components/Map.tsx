@@ -67,7 +67,7 @@ export const MapComponent: React.FC<{
         />
         
         {/* User Location */}
-        <Marker position={userLocation} icon={userIcon} />
+        {userLocation && <Marker position={userLocation} icon={userIcon} />}
 
         {/* Stations */}
         {stations.map(station => {

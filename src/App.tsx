@@ -45,6 +45,7 @@ function App() {
         async (error) => {
           console.error("Błąd lokalizacji. Używam domyślnej.", error);
           // Fallback fetch
+          setUserLoc(WARSAW_CENTER);
           const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
           setStations(fetched);
           setIsLoading(false);
@@ -52,7 +53,13 @@ function App() {
         { enableHighAccuracy: true }
       );
     } else {
-      setIsLoading(false);
+      setUserLoc(WARSAW_CENTER);
+      const fetchFallback = async () => {
+        const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
+        setStations(fetched);
+        setIsLoading(false);
+      };
+      fetchFallback();
     }
   }, []);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
