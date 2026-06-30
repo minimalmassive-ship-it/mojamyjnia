@@ -55,11 +55,12 @@ const DEFAULT_FEATURES: WashFeatures = {
 
 // Fetch from OpenStreetMap Overpass API
 export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
-  const query = `
-    [out:json];
-    node["amenity"="car_wash"](around:10000, ${lat}, ${lng});
-    out;
-  `;
+  const query = `[out:json][timeout:10];
+(
+  node["amenity"="car_wash"](around:10000, ${lat}, ${lng});
+  way["amenity"="car_wash"](around:10000, ${lat}, ${lng});
+);
+out center;`;
   
   try {
     let response;
@@ -86,8 +87,8 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
     const osmStations: WashStation[] = data.elements.map((el: any) => ({
       id: el.id.toString(),
       name: el.tags?.name || 'Myjnia bez nazwy',
-      lat: el.lat,
-      lng: el.lon,
+      lat: el.center?.lat || el.lat,
+      lng: el.center?.lon || el.lon,
       features: { ...DEFAULT_FEATURES },
       points: calculatePoints(DEFAULT_FEATURES),
       isRated: false,
