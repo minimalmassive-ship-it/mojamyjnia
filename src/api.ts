@@ -161,7 +161,7 @@ export async function submitSurvey(stationId: string, features: WashFeatures, ne
 
 export async function geocodeCity(cityName: string): Promise<[number, number] | null> {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=pl&featuretype=settlement&limit=1`, {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=pl&limit=1`, {
       headers: {
         'User-Agent': 'MojaMyjnia/1.0'
       }

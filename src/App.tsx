@@ -206,10 +206,10 @@ function App() {
               </div>
               <input 
                 type="text" 
-                placeholder="Wpisz miasto..." 
+                placeholder="Miasto, ulica..." 
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm"
+                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-500"
               />
               <button 
                 type="submit" 

@@ -157,8 +157,21 @@ const MarkersLayer = ({ stations, onNavigate, onSurveyOpen }: {
             <Popup className="custom-popup">
               <div className="w-64">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-lg leading-tight text-white">{station.name}</h3>
-                  <div className={twMerge('px-2 py-1 rounded-md text-xs font-bold whitespace-nowrap', getScoreColor(points))}>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight text-white">{station.name}</h3>
+                    {station.name === 'Myjnia bez nazwy' && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSurveyOpen(station);
+                        }}
+                        className="text-brand-lightPurple hover:text-white text-xs mt-1 underline"
+                      >
+                        Dodaj nazwę
+                      </button>
+                    )}
+                  </div>
+                  <div className={twMerge('px-2 py-1 rounded-md text-xs font-bold whitespace-nowrap ml-2', getScoreColor(points))}>
                     {points} / {MAX_POINTS} pkt
                   </div>
                 </div>
