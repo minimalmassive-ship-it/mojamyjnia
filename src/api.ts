@@ -55,15 +55,21 @@ const DEFAULT_FEATURES: WashFeatures = {
 
 // Fetch from OpenStreetMap Overpass API
 export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
-  const query = `
-    [out:json];
-    nwr["amenity"="car_wash"](around:10000, ${lat}, ${lng});
-    out center;
-  `;
-  const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+  const query = `[out:json][timeout:25];nwr["amenity"="car_wash"](around:10000,${lat},${lng});out center;`;
   
   try {
-    const response = await fetch(url);
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'data=' + encodeURIComponent(query)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Overpass API error: ' + response.statusText);
+    }
+    
     const data = await response.json();
     
     // Parse OSM nodes, ways and relations
@@ -82,40 +88,45 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
     // Extract IDs to query Supabase
     const ids = osmStations.map(s => s.id);
     
-    const { data: supabaseData, error } = await supabase
-      .from('wash_stations')
-      .select('*')
-      .in('id', ids);
+    try {
+      const { data: supabaseData, error } = await supabase
+        .from('wash_stations')
+        .select('*')
+        .in('id', ids);
 
-    if (error) {
-      console.error('Błąd pobierania z Supabase (tabela może nie istnieć):', error);
-      return osmStations; // Return OSM only if supabase fails
-    }
+      if (error) {
+        console.error('Błąd pobierania z Supabase:', error);
+        return osmStations;
+      }
 
-    // Merge Supabase ratings into OSM stations
-    if (supabaseData && supabaseData.length > 0) {
-      const dbMap = new Map(supabaseData.map(d => [d.id, d]));
-      return osmStations.map(station => {
-        const dbEntry = dbMap.get(station.id);
-        if (dbEntry) {
-          const features: WashFeatures = {
-            timePerPLN: dbEntry.time_per_pln || '45s',
-            hasVacuum: dbEntry.has_vacuum || false,
-            hasBrush: dbEntry.has_brush || false,
-            acceptsCoins: dbEntry.accepts_coins || false,
-            acceptsBanknotes: dbEntry.accepts_banknotes || false,
-            acceptsCards: dbEntry.accepts_cards || false,
-            hasChanger: dbEntry.has_changer || false,
-          };
-          return {
-            ...station,
-            features,
-            points: calculatePoints(features),
-            isRated: true,
-          };
-        }
-        return station;
-      });
+      // Merge Supabase ratings into OSM stations
+      if (supabaseData && supabaseData.length > 0) {
+        const dbMap = new Map(supabaseData.map(d => [d.id, d]));
+        return osmStations.map(station => {
+          const dbEntry = dbMap.get(station.id);
+          if (dbEntry) {
+            const features: WashFeatures = {
+              timePerPLN: dbEntry.time_per_pln || '45s',
+              hasVacuum: dbEntry.has_vacuum || false,
+              hasBrush: dbEntry.has_brush || false,
+              acceptsCoins: dbEntry.accepts_coins || false,
+              acceptsBanknotes: dbEntry.accepts_banknotes || false,
+              acceptsCards: dbEntry.accepts_cards || false,
+              hasChanger: dbEntry.has_changer || false,
+            };
+            return {
+              ...station,
+              features,
+              points: calculatePoints(features),
+              isRated: true,
+            };
+          }
+          return station;
+        });
+      }
+    } catch (supaErr) {
+      console.error('Wyjątek podczas łączenia z Supabase:', supaErr);
+      return osmStations;
     }
 
     return osmStations;
