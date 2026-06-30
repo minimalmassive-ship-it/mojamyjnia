@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapComponent } from './components/Map';
-import { mockStations, type WashStation, calculatePoints } from './data/mockData';
+import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints } from './api';
 import { calculateDistance } from './utils/distance';
 import { Search, Navigation, X, Trophy, Check } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
@@ -10,17 +10,33 @@ const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
 function App() {
   const [userLoc, setUserLoc] = useState<[number, number]>(WARSAW_CENTER);
 
+  const [stations, setStations] = useState<WashStation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLoc([position.coords.latitude, position.coords.longitude]);
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setUserLoc([lat, lng]);
+          
+          setIsLoading(true);
+          const fetched = await fetchStationsNearby(lat, lng);
+          setStations(fetched);
+          setIsLoading(false);
         },
-        (error) => {
+        async (error) => {
           console.error("Błąd lokalizacji. Używam domyślnej.", error);
+          // Fallback fetch
+          const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
+          setStations(fetched);
+          setIsLoading(false);
         },
         { enableHighAccuracy: true }
       );
+    } else {
+      setIsLoading(false);
     }
   }, []);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
@@ -30,7 +46,9 @@ function App() {
   
   // Dual choice
   const recommendations = useMemo(() => {
-    const stationsWithDist = mockStations.map(s => ({
+    if (!userLoc || stations.length === 0) return { best: null, closest: null };
+
+    const stationsWithDist = stations.map(s => ({
       ...s,
       distance: calculateDistance(userLoc[0], userLoc[1], s.lat, s.lng),
       points: calculatePoints(s.features)
@@ -46,29 +64,45 @@ function App() {
     })[0];
 
     return { best, closest };
-  }, [userLoc]);
+  }, [userLoc, stations]);
 
   const handleNavigate = (station: WashStation) => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`, '_blank');
   };
 
-  const handleSurveySubmit = () => {
+  const handleSurveySubmit = async () => {
+    if (surveyStation) {
+      try {
+        await submitSurvey(surveyStation.id, surveyStation.features);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        
+        // Update local state
+        setStations(prev => prev.map(s => s.id === surveyStation.id ? { 
+          ...surveyStation, 
+          points: calculatePoints(surveyStation.features) 
+        } : s));
+      } catch (e) {
+        alert("Wystąpił błąd podczas zapisu ocen. Spróbuj ponownie.");
+      }
+    }
     setIsSurveyOpen(false);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 4000);
   };
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-dark-bg text-white font-sans">
-      <MapComponent 
-        userLocation={userLoc} 
-        stations={mockStations} 
-        onNavigate={handleNavigate}
-        onSurveyOpen={(s) => {
-          setSurveyStation(s);
-          setIsSurveyOpen(true);
-        }}
-      />
+      {isLoading ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-dark-bg z-0 text-gray-400">
+          Szukam myjni w Twojej okolicy...
+        </div>
+      ) : (
+        <MapComponent 
+          userLocation={userLoc} 
+          stations={stations} 
+          onNavigate={handleNavigate}
+          onSurveyOpen={(station) => { setSurveyStation({...station}); setIsSurveyOpen(true); }}
+        />
+      )}
 
       {/* Dyskretna lupka do szukania (SearchFilters) */}
       <div className="absolute top-6 right-4 z-[400]">
@@ -84,21 +118,24 @@ function App() {
       <div className="absolute bottom-0 left-0 w-full z-[400] p-4 bg-gradient-to-t from-dark-bg via-dark-bg/90 to-transparent pt-12 pb-8">
         <div className="flex gap-4 max-w-md mx-auto">
           {/* Szybka Alternatywa */}
+          {recommendations.closest && (
           <button 
-            onClick={() => handleNavigate(recommendations.closest)}
+            onClick={() => handleNavigate(recommendations.closest!)}
             className="flex-1 bg-dark-surface/90 backdrop-blur-md border border-dark-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
           >
             <div className="text-gray-400 text-xs uppercase tracking-wider font-bold">Szybka Alternatywa</div>
             <div className="text-lg font-bold text-white text-center leading-tight h-10">{recommendations.closest.name}</div>
             <div className="text-brand-blue font-bold flex items-center gap-1">
               <Navigation size={14} />
-              {recommendations.closest.distance.toFixed(1)} km
+              {(recommendations.closest as any).distance?.toFixed(1)} km
             </div>
           </button>
+          )}
 
           {/* Najlepszy Wybór */}
+          {recommendations.best && (
           <button 
-            onClick={() => handleNavigate(recommendations.best)}
+            onClick={() => handleNavigate(recommendations.best!)}
             className="flex-1 bg-brand-purple/20 backdrop-blur-md border border-brand-purple rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_0_20px_rgba(147,51,234,0.3)] relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-16 h-16 bg-brand-purple/20 blur-2xl rounded-full" />
@@ -108,6 +145,7 @@ function App() {
               {recommendations.best.points} pkt
             </div>
           </button>
+          )}
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { type WashStation, calculatePoints, MAX_POINTS } from '../data/mockData';
+import { type WashStation, calculatePoints, MAX_POINTS } from '../api';
 import { Check, X, Navigation } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
@@ -76,7 +76,7 @@ export const MapComponent: React.FC<{
             <Marker 
               key={station.id} 
               position={[station.lat, station.lng]} 
-              icon={createCustomIcon(points, station.isSponsored)}
+              icon={createCustomIcon(points, false)}
             >
               <Popup className="custom-popup">
                 <div className="w-64">
