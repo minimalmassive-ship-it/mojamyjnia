@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MapComponent } from './components/Map';
 import { mockStations, type WashStation, calculatePoints } from './data/mockData';
 import { calculateDistance } from './utils/distance';
@@ -8,7 +8,21 @@ import { twMerge } from 'tailwind-merge';
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
 
 function App() {
-  const [userLoc] = useState<[number, number]>(WARSAW_CENTER);
+  const [userLoc, setUserLoc] = useState<[number, number]>(WARSAW_CENTER);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLoc([position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          console.error("Błąd lokalizacji. Używam domyślnej.", error);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [surveyStation, setSurveyStation] = useState<WashStation | null>(null);
   const [showToast, setShowToast] = useState(false);

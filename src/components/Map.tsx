@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { type WashStation, calculatePoints, MAX_POINTS } from '../data/mockData';
@@ -38,6 +38,14 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
+const LocationUpdater = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+  return null;
+};
+
 export const MapComponent: React.FC<{
   userLocation: [number, number];
   stations: WashStation[];
@@ -52,6 +60,7 @@ export const MapComponent: React.FC<{
         zoomControl={false}
         className="w-full h-full"
       >
+        <LocationUpdater center={userLocation} />
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
