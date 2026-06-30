@@ -59,11 +59,11 @@ export const MapComponent: React.FC<{
         center={userLocation} 
         zoom={13} 
         zoomControl={false}
+        attributionControl={false}
         className="w-full h-full"
       >
         <LocationUpdater center={userLocation} />
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         
