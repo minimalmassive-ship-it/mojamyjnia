@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-gray-100 antialiased overflow-hidden;
+  }
+}
+
+/* Reset leaflet map generic styles to better fit dark mode */
+.leaflet-container {
+  @apply w-full h-full;
+  background-color: #121212 !important;
+}
+.leaflet-control-zoom {
+  @apply border-none shadow-md !important;
+}
+.leaflet-control-zoom a {
+  @apply bg-dark-surface text-gray-200 border-dark-border !important;
+}
+.leaflet-control-zoom a:hover {
+  @apply bg-dark-surfaceHover !important;
+}
+.leaflet-popup-content-wrapper {
+  @apply bg-dark-surface text-gray-100 rounded-2xl shadow-xl border border-dark-border !important;
+}
+.leaflet-popup-tip {
+  @apply bg-dark-surface border border-dark-border !important;
+}
