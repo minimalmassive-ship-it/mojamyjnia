@@ -129,7 +129,11 @@ function App() {
   }, [userLoc, filteredStations]);
 
   const handleNavigate = (station: WashStation) => {
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`, '_blank');
+    // Dodajemy "myjnia" lub nazwę do zapytania, żeby Google Maps nie snapowało do przypadkowych punktów (np. DHL)
+    // pod tym samym adresem, tylko znalazło myjnię w tych współrzędnych.
+    const keyword = station.name !== 'Myjnia bez nazwy' ? station.name : 'myjnia samochodowa';
+    const destination = `${keyword} ${station.lat},${station.lng}`;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`, '_blank');
   };
 
   const handleSurveySubmit = async () => {
