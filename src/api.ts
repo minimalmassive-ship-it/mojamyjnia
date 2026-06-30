@@ -58,13 +58,14 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
   const query = `[out:json][timeout:25];nwr["amenity"="car_wash"](around:10000,${lat},${lng});out center;`;
   
   try {
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: 'data=' + encodeURIComponent(query)
-    });
+    let url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+    let response = await fetch(url);
+    
+    if (!response.ok) {
+      // Fallback endpoint
+      url = `https://z.overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+      response = await fetch(url);
+    }
     
     if (!response.ok) {
       throw new Error('Overpass API error: ' + response.statusText);
