@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapComponent } from './components/Map';
-import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints } from './api';
+import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download, MapPin } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -16,6 +16,9 @@ function App() {
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+
+  const [citySearch, setCitySearch] = useState('');
+  const [isSearchingCity, setIsSearchingCity] = useState(false);
 
   useEffect(() => {
     // Check if iOS
@@ -66,6 +69,27 @@ function App() {
       fetchFallback();
     }
   }, []);
+  
+  const handleCitySearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!citySearch.trim()) return;
+    
+    setIsSearchingCity(true);
+    const coords = await geocodeCity(citySearch);
+    
+    if (coords) {
+      setUserLoc(coords);
+      setHasLocationPermission(true);
+      setIsLoading(true);
+      const fetched = await fetchStationsNearby(coords[0], coords[1]);
+      setStations(fetched);
+      setIsLoading(false);
+    } else {
+      alert("Nie znaleziono takiej miejscowości.");
+    }
+    setIsSearchingCity(false);
+  };
+
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [surveyStation, setSurveyStation] = useState<WashStation | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -152,7 +176,7 @@ function App() {
   };
 
   return (
-    <div className="relative w-full h-screen font-sans overflow-hidden bg-dark-bg text-gray-100">
+    <div className="relative w-full h-screen font-sans overflow-hidden bg-dark-bg text-gray-100 flex flex-col">
       {isLoading ? (
         <div className="absolute inset-0 flex items-center justify-center bg-dark-bg z-0 text-gray-400">
           Szukam myjni w Twojej okolicy...
@@ -171,19 +195,42 @@ function App() {
 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-dark-bg/90 to-transparent pointer-events-none">
-        <div className="flex justify-between items-start pointer-events-auto">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pointer-events-auto">
+          <div className="flex items-center gap-3">
+            <img src="/favicon.svg" alt="Logo" className="w-10 h-10 drop-shadow-md" />
             <h1 className="text-3xl font-black tracking-tighter text-white drop-shadow-md">
               <span className="text-brand-blue">JANOSIK</span> UMYTY
             </h1>
           </div>
           
-          <button 
-            onClick={() => setShowSearch(true)}
-            className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3 rounded-2xl shadow-lg active:scale-95 transition-transform"
-          >
-            <Search size={20} className="text-brand-blue" />
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-dark-surface/90 backdrop-blur-md border border-dark-border rounded-xl overflow-hidden shadow-lg focus-within:border-brand-blue transition-colors">
+              <div className="pl-3 py-3 flex items-center text-gray-400">
+                <MapPin size={18} />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Wpisz miasto..." 
+                value={citySearch}
+                onChange={(e) => setCitySearch(e.target.value)}
+                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm"
+              />
+              <button 
+                type="submit" 
+                disabled={isSearchingCity}
+                className="px-4 py-3 bg-brand-blue/20 text-brand-blue hover:bg-brand-blue hover:text-white transition-colors disabled:opacity-50 font-semibold text-sm"
+              >
+                Szukaj
+              </button>
+            </form>
+
+            <button 
+              onClick={() => setShowSearch(true)}
+              className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
+            >
+              <Search size={20} className="text-brand-blue" />
+            </button>
+          </div>
         </div>
       </div>
 

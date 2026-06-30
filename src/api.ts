@@ -170,3 +170,22 @@ export async function submitSurvey(stationId: string, features: WashFeatures) {
     throw error;
   }
 }
+
+export async function geocodeCity(cityName: string): Promise<[number, number] | null> {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`, {
+      headers: {
+        'User-Agent': 'MojaMyjnia/1.0'
+      }
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    }
+    return null;
+  } catch (err) {
+    console.error('Geocoding error:', err);
+    return null;
+  }
+}
