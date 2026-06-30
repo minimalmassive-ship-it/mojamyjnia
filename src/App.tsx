@@ -164,29 +164,41 @@ function App() {
         </div>
       )}
 
-      {/* PWA Install Button */}
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-dark-bg/90 to-transparent pointer-events-none">
+        <div className="flex justify-between items-start pointer-events-auto">
+          <div>
+            <h1 className="text-3xl font-black tracking-tighter text-white drop-shadow-md">
+              <span className="text-brand-blue">JANOSIK</span> UMYTY
+            </h1>
+            <p className="text-brand-lightPurple text-sm font-bold opacity-90 drop-shadow">Społecznościowa mapa myjni</p>
+          </div>
+          
+          <button 
+            onClick={() => setShowSearch(true)}
+            className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3 rounded-2xl shadow-lg active:scale-95 transition-transform"
+          >
+            <Search size={20} className="text-brand-blue" />
+          </button>
+        </div>
+      </div>
+
+      {/* Floating Install PWA Button */}
       {(deferredPrompt || isIOS) && (
-        <button 
+        <button
           onClick={handleInstallClick}
-          className="absolute top-6 left-4 z-[400] bg-dark-surface/90 backdrop-blur-md p-3 rounded-xl border border-dark-border text-white shadow-lg active:scale-95 transition-transform flex items-center gap-2"
+          className="absolute bottom-40 right-4 z-10 bg-brand-blue text-white p-3 rounded-full shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform border border-white/20 flex items-center justify-center pointer-events-auto group"
         >
-          <Download size={20} className="text-brand-purple" />
+          <Download size={22} />
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap font-bold text-sm">
+            Zainstaluj Aplikację
+          </span>
         </button>
       )}
 
-      {/* Dyskretna lupka do szukania (SearchFilters) */}
-      <div className="absolute top-6 right-4 z-[400]">
-        <button 
-          onClick={() => setShowSearch(true)}
-          className="bg-dark-surface/90 backdrop-blur-sm p-3 rounded-full border border-dark-border shadow-lg text-gray-300 hover:text-white transition-colors"
-        >
-          <Search size={24} />
-        </button>
-      </div>
-
-      {/* Dual Choice System Menu */}
-      <div className="absolute bottom-0 left-0 w-full z-[400] p-4 bg-gradient-to-t from-dark-bg via-dark-bg/90 to-transparent pt-12 pb-8">
-        <div className="flex gap-4 max-w-md mx-auto">
+      {/* Dual Choice / Bottom Panel */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 pb-8 pointer-events-none">
+        <div className="flex gap-4 max-w-md mx-auto pointer-events-auto">
           {/* Szybka Alternatywa */}
           {recommendations.closest && (
           <button 
