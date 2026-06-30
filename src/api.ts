@@ -57,8 +57,8 @@ const DEFAULT_FEATURES: WashFeatures = {
 export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
   const query = `
     [out:json];
-    node["amenity"="car_wash"](around:10000, ${lat}, ${lng});
-    out;
+    nwr["amenity"="car_wash"](around:10000, ${lat}, ${lng});
+    out center;
   `;
   const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
   
@@ -66,12 +66,12 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
     const response = await fetch(url);
     const data = await response.json();
     
-    // Parse OSM nodes
+    // Parse OSM nodes, ways and relations
     const osmStations: WashStation[] = data.elements.map((el: any) => ({
       id: el.id.toString(),
       name: el.tags?.name || 'Myjnia bez nazwy',
-      lat: el.lat,
-      lng: el.lon,
+      lat: el.center?.lat || el.lat,
+      lng: el.center?.lon || el.lon,
       features: { ...DEFAULT_FEATURES }, // default before supabase merge
       points: calculatePoints(DEFAULT_FEATURES),
       isRated: false,

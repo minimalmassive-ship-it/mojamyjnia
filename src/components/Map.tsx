@@ -48,10 +48,11 @@ const LocationUpdater = ({ center }: { center: [number, number] }) => {
 
 export const MapComponent: React.FC<{
   userLocation: [number, number];
+  hasLocationPermission: boolean;
   stations: WashStation[];
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
-}> = ({ userLocation, stations, onNavigate, onSurveyOpen }) => {
+}> = ({ userLocation, hasLocationPermission, stations, onNavigate, onSurveyOpen }) => {
   return (
     <div className="absolute inset-0 z-0 bg-dark-bg">
       <MapContainer 
@@ -67,7 +68,7 @@ export const MapComponent: React.FC<{
         />
         
         {/* User Location */}
-        {userLocation && <Marker position={userLocation} icon={userIcon} />}
+        {hasLocationPermission && userLocation && <Marker position={userLocation} icon={userIcon} />}
 
         {/* Stations */}
         {stations.map(station => {

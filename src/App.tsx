@@ -9,6 +9,7 @@ const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
 
 function App() {
   const [userLoc, setUserLoc] = useState<[number, number]>(WARSAW_CENTER);
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
 
   const [stations, setStations] = useState<WashStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +37,7 @@ function App() {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           setUserLoc([lat, lng]);
+          setHasLocationPermission(true);
           
           setIsLoading(true);
           const fetched = await fetchStationsNearby(lat, lng);
@@ -46,6 +48,7 @@ function App() {
           console.error("Błąd lokalizacji. Używam domyślnej.", error);
           // Fallback fetch
           setUserLoc(WARSAW_CENTER);
+          setHasLocationPermission(false);
           const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
           setStations(fetched);
           setIsLoading(false);
@@ -54,6 +57,7 @@ function App() {
       );
     } else {
       setUserLoc(WARSAW_CENTER);
+      setHasLocationPermission(false);
       const fetchFallback = async () => {
         const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
         setStations(fetched);
@@ -157,6 +161,7 @@ function App() {
         <div className="absolute inset-0 z-0 pointer-events-auto">
         <MapComponent 
           userLocation={userLoc} 
+          hasLocationPermission={hasLocationPermission}
           stations={filteredStations} 
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setIsSurveyOpen(true); }}
@@ -171,7 +176,6 @@ function App() {
             <h1 className="text-3xl font-black tracking-tighter text-white drop-shadow-md">
               <span className="text-brand-blue">JANOSIK</span> UMYTY
             </h1>
-            <p className="text-brand-lightPurple text-sm font-bold opacity-90 drop-shadow">Społecznościowa mapa myjni</p>
           </div>
           
           <button 
