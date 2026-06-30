@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -12,6 +12,22 @@ function App() {
 
   const [stations, setStations] = useState<WashStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    // Check if iOS
+    const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(isIosDevice);
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -89,8 +105,22 @@ function App() {
     setIsSurveyOpen(false);
   };
 
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else if (isIOS) {
+      alert("Aby zainstalować na iOS:\n1. Kliknij ikonę 'Udostępnij' na dole ekranu (kwadrat ze strzałką).\n2. Wybierz 'Do ekranu początkowego' z listy.");
+    } else {
+      alert("Aplikacja jest już zainstalowana, lub Twoja przeglądarka nie obsługuje instalacji PWA.");
+    }
+  };
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-dark-bg text-white font-sans">
+    <div className="relative w-full h-screen font-sans overflow-hidden bg-dark-bg text-gray-100">
       {isLoading ? (
         <div className="absolute inset-0 flex items-center justify-center bg-dark-bg z-0 text-gray-400">
           Szukam myjni w Twojej okolicy...
@@ -102,6 +132,16 @@ function App() {
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setIsSurveyOpen(true); }}
         />
+      )}
+
+      {/* PWA Install Button */}
+      {(deferredPrompt || isIOS) && (
+        <button 
+          onClick={handleInstallClick}
+          className="absolute top-6 left-4 z-[400] bg-dark-surface/90 backdrop-blur-md p-3 rounded-xl border border-dark-border text-white shadow-lg active:scale-95 transition-transform flex items-center gap-2"
+        >
+          <Download size={20} className="text-brand-purple" />
+        </button>
       )}
 
       {/* Dyskretna lupka do szukania (SearchFilters) */}
