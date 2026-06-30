@@ -71,7 +71,7 @@ export const MapComponent: React.FC<{
 
         {/* Stations */}
         {stations.map(station => {
-          const points = calculatePoints(station.features);
+          const points = station.isRated ? calculatePoints(station.features) : 0;
           return (
             <Marker 
               key={station.id} 
@@ -89,13 +89,13 @@ export const MapComponent: React.FC<{
                   
                   {/* Cechy z TAK/NIE wylistowane jasno */}
                   <div className="grid grid-cols-2 gap-y-2 gap-x-4 my-4 text-sm text-gray-300">
-                    <FeatureRow label="Czas za 1zł" value={station.features.timePerPLN} />
-                    <FeatureRow label="Odkurzacz" value={station.features.hasVacuum} />
-                    <FeatureRow label="Szczotka" value={station.features.hasBrush} />
-                    <FeatureRow label="Bilon" value={station.features.acceptsCoins} />
-                    <FeatureRow label="Banknoty" value={station.features.acceptsBanknotes} />
-                    <FeatureRow label="Karta" value={station.features.acceptsCards} />
-                    <FeatureRow label="Rozmieniarka" value={station.features.hasChanger} />
+                    <FeatureRow label="Czas za 1zł" value={station.features.timePerPLN} isRated={!!station.isRated} />
+                    <FeatureRow label="Odkurzacz" value={station.features.hasVacuum} isRated={!!station.isRated} />
+                    <FeatureRow label="Szczotka" value={station.features.hasBrush} isRated={!!station.isRated} />
+                    <FeatureRow label="Bilon" value={station.features.acceptsCoins} isRated={!!station.isRated} />
+                    <FeatureRow label="Banknoty" value={station.features.acceptsBanknotes} isRated={!!station.isRated} />
+                    <FeatureRow label="Karta" value={station.features.acceptsCards} isRated={!!station.isRated} />
+                    <FeatureRow label="Rozmieniarka" value={station.features.hasChanger} isRated={!!station.isRated} />
                   </div>
 
                   <div className="flex gap-2 mt-4">
@@ -123,11 +123,13 @@ export const MapComponent: React.FC<{
   );
 };
 
-const FeatureRow = ({ label, value }: { label: string, value: boolean | string }) => {
+const FeatureRow = ({ label, value, isRated }: { label: string, value: boolean | string, isRated: boolean }) => {
   return (
     <div className="flex items-center justify-between">
       <span className="text-gray-400">{label}</span>
-      {typeof value === 'boolean' ? (
+      {!isRated ? (
+        <span className="font-semibold text-gray-500">-</span>
+      ) : typeof value === 'boolean' ? (
         value ? <Check size={16} className="text-green-500" /> : <X size={16} className="text-red-500" />
       ) : (
         <span className="font-semibold text-white">{value}</span>

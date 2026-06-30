@@ -22,6 +22,7 @@ export type WashStation = {
   lng: number;
   features: WashFeatures;
   points?: number; 
+  isRated?: boolean;
 };
 
 export const MAX_POINTS = 9;
@@ -73,6 +74,7 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
       lng: el.lon,
       features: { ...DEFAULT_FEATURES }, // default before supabase merge
       points: calculatePoints(DEFAULT_FEATURES),
+      isRated: false,
     }));
 
     if (osmStations.length === 0) return [];
@@ -109,6 +111,7 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
             ...station,
             features,
             points: calculatePoints(features),
+            isRated: true,
           };
         }
         return station;
