@@ -53,41 +53,13 @@ const DEFAULT_FEATURES: WashFeatures = {
   hasChanger: false,
 };
 
-// Fetch ALL car washes in Poland from OpenStreetMap Overpass API
+// Fetch ALL car washes in Poland from the local static JSON file
 export async function fetchStationsNearby(): Promise<WashStation[]> {
-  // Bounding box obejmujący całą Polskę (ok. 49.0N do 55.0N, 14.0E do 24.2E)
-  const query = `[out:json][timeout:25];
-(
-  node["amenity"="car_wash"](49.0, 14.0, 55.0, 24.2);
-  way["amenity"="car_wash"](49.0, 14.0, 55.0, 24.2);
-);
-out center;`;
-  
   try {
-    let response;
-    try {
-      const c1 = new AbortController();
-      const id1 = setTimeout(() => c1.abort(), 20000);
-      response = await fetch(`https://overpass-api.de/api/interpreter`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: c1.signal
-      });
-      clearTimeout(id1);
-      if (!response.ok) throw new Error('Not ok');
-    } catch (e) {
-      const c2 = new AbortController();
-      const id2 = setTimeout(() => c2.abort(), 20000);
-      response = await fetch(`https://z.overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, { signal: c2.signal });
-      clearTimeout(id2);
-    }
-    
+    const response = await fetch('/poland.json');
     if (!response.ok) {
-      alert("Błąd serwera mapy. Spróbuj odświeżyć.");
-      throw new Error('Overpass API error: ' + response.statusText);
+      console.error("Brak pliku poland.json");
+      return [];
     }
     
     const data = await response.json();
@@ -101,6 +73,7 @@ out center;`;
       points: calculatePoints(DEFAULT_FEATURES),
       isRated: false,
     }));
+
 
     if (osmStations.length === 0) {
       // Jeśli serwer zwrócił 0, spróbujmy wyświetlić chociaż alert
