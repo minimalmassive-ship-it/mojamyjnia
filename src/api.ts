@@ -112,6 +112,7 @@ export async function fetchStationsNearby(): Promise<WashStation[]> {
             };
             return {
               ...station,
+              name: dbEntry.name || station.name, // Override name if exists in DB
               features,
               points: calculatePoints(features),
               isRated: true,
@@ -132,19 +133,25 @@ export async function fetchStationsNearby(): Promise<WashStation[]> {
   }
 }
 
-export async function submitSurvey(stationId: string, features: WashFeatures) {
+export async function submitSurvey(stationId: string, features: WashFeatures, newName?: string) {
+  const payload: any = {
+    id: stationId,
+    time_per_pln: features.timePerPLN,
+    has_vacuum: features.hasVacuum,
+    has_brush: features.hasBrush,
+    accepts_coins: features.acceptsCoins,
+    accepts_banknotes: features.acceptsBanknotes,
+    accepts_cards: features.acceptsCards,
+    has_changer: features.hasChanger,
+  };
+  
+  if (newName && newName.trim() !== '') {
+    payload.name = newName.trim();
+  }
+
   const { error } = await supabase
     .from('wash_stations')
-    .upsert({
-      id: stationId,
-      time_per_pln: features.timePerPLN,
-      has_vacuum: features.hasVacuum,
-      has_brush: features.hasBrush,
-      accepts_coins: features.acceptsCoins,
-      accepts_banknotes: features.acceptsBanknotes,
-      accepts_cards: features.acceptsCards,
-      has_changer: features.hasChanger,
-    }, { onConflict: 'id' });
+    .upsert(payload, { onConflict: 'id' });
 
   if (error) {
     console.error("Błąd zapisu ankiety do Supabase:", error);

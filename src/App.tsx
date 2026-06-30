@@ -82,6 +82,7 @@ function App() {
 
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [surveyStation, setSurveyStation] = useState<WashStation | null>(null);
+  const [customName, setCustomName] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
@@ -139,13 +140,14 @@ function App() {
   const handleSurveySubmit = async () => {
     if (surveyStation) {
       try {
-        await submitSurvey(surveyStation.id, surveyStation.features);
+        await submitSurvey(surveyStation.id, surveyStation.features, customName);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
         
         // Update local state
         setStations(prev => prev.map(s => s.id === surveyStation.id ? { 
           ...surveyStation, 
+          name: (customName && customName.trim() !== '') ? customName.trim() : surveyStation.name,
           points: calculatePoints(surveyStation.features) 
         } : s));
       } catch (e) {
@@ -182,7 +184,7 @@ function App() {
           hasLocationPermission={hasLocationPermission}
           stations={filteredStations} 
           onNavigate={handleNavigate}
-          onSurveyOpen={(station) => { setSurveyStation({...station}); setIsSurveyOpen(true); }}
+          onSurveyOpen={(station) => { setSurveyStation({...station}); setCustomName(''); setIsSurveyOpen(true); }}
         />
         </div>
       )}
@@ -289,6 +291,19 @@ function App() {
             
             <p className="text-sm text-gray-400 mb-6">Szybka weryfikacja cech. Zaznacz co zastałeś na miejscu. Zero pisania!</p>
             
+            {surveyStation.name === 'Myjnia bez nazwy' && (
+              <div className="mb-4">
+                <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Dodaj nazwę (opcjonalnie)</div>
+                <input 
+                  type="text" 
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Np. BP, Orlen, Pure Auto..."
+                  className="w-full bg-black/30 border border-dark-border rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+                />
+              </div>
+            )}
+
             {/* Ankieta zamknięta zestawem cech w jednym rzędzie na sekcję (symulacja mobilna) */}
             <div className="space-y-4">
               <div>
