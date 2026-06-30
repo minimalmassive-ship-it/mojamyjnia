@@ -53,12 +53,13 @@ const DEFAULT_FEATURES: WashFeatures = {
   hasChanger: false,
 };
 
-// Fetch from OpenStreetMap Overpass API
-export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
-  const query = `[out:json][timeout:10];
+// Fetch ALL car washes in Poland from OpenStreetMap Overpass API
+export async function fetchStationsNearby(): Promise<WashStation[]> {
+  // Bounding box obejmujący całą Polskę (ok. 49.0N do 55.0N, 14.0E do 24.2E)
+  const query = `[out:json][timeout:25];
 (
-  node["amenity"="car_wash"](around:10000, ${lat}, ${lng});
-  way["amenity"="car_wash"](around:10000, ${lat}, ${lng});
+  node["amenity"="car_wash"](49.0, 14.0, 55.0, 24.2);
+  way["amenity"="car_wash"](49.0, 14.0, 55.0, 24.2);
 );
 out center;`;
   
@@ -66,15 +67,22 @@ out center;`;
     let response;
     try {
       const c1 = new AbortController();
-      const t1 = setTimeout(() => c1.abort(), 5000);
-      response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, { signal: c1.signal });
-      clearTimeout(t1);
+      const id1 = setTimeout(() => c1.abort(), 20000);
+      response = await fetch(`https://overpass-api.de/api/interpreter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: c1.signal
+      });
+      clearTimeout(id1);
       if (!response.ok) throw new Error('Not ok');
     } catch (e) {
       const c2 = new AbortController();
-      const t2 = setTimeout(() => c2.abort(), 10000);
+      const id2 = setTimeout(() => c2.abort(), 20000);
       response = await fetch(`https://z.overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, { signal: c2.signal });
-      clearTimeout(t2);
+      clearTimeout(id2);
     }
     
     if (!response.ok) {

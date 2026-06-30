@@ -34,6 +34,15 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Only fetch stations once for the whole country
+    const loadAllStations = async () => {
+      setIsLoading(true);
+      const fetched = await fetchStationsNearby();
+      setStations(fetched);
+      setIsLoading(false);
+    };
+    loadAllStations();
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -41,35 +50,20 @@ function App() {
           const lng = position.coords.longitude;
           setUserLoc([lat, lng]);
           setHasLocationPermission(true);
-          
-          setIsLoading(true);
-          const fetched = await fetchStationsNearby(lat, lng);
-          setStations(fetched);
-          setIsLoading(false);
         },
         async (error) => {
           console.error("Błąd lokalizacji. Używam domyślnej.", error);
-          // Fallback fetch
           setUserLoc(WARSAW_CENTER);
           setHasLocationPermission(false);
-          const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
-          setStations(fetched);
-          setIsLoading(false);
         },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
       setUserLoc(WARSAW_CENTER);
       setHasLocationPermission(false);
-      const fetchFallback = async () => {
-        const fetched = await fetchStationsNearby(WARSAW_CENTER[0], WARSAW_CENTER[1]);
-        setStations(fetched);
-        setIsLoading(false);
-      };
-      fetchFallback();
     }
   }, []);
-  
+
   const handleCitySearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!citySearch.trim()) return;
@@ -80,10 +74,6 @@ function App() {
     if (coords) {
       setUserLoc(coords);
       setHasLocationPermission(true);
-      setIsLoading(true);
-      const fetched = await fetchStationsNearby(coords[0], coords[1]);
-      setStations(fetched);
-      setIsLoading(false);
     } else {
       alert("Nie znaleziono takiej miejscowości.");
     }
