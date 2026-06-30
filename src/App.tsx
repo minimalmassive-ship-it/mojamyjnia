@@ -59,12 +59,33 @@ function App() {
   const [surveyStation, setSurveyStation] = useState<WashStation | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+
+  const [filters, setFilters] = useState({
+    hasVacuum: false,
+    hasBrush: false,
+    hasChanger: false,
+    acceptsCoins: false,
+    acceptsBanknotes: false,
+    acceptsCards: false,
+  });
+
+  const filteredStations = useMemo(() => {
+    return stations.filter(s => {
+      if (filters.hasVacuum && !s.features.hasVacuum) return false;
+      if (filters.hasBrush && !s.features.hasBrush) return false;
+      if (filters.hasChanger && !s.features.hasChanger) return false;
+      if (filters.acceptsCoins && !s.features.acceptsCoins) return false;
+      if (filters.acceptsBanknotes && !s.features.acceptsBanknotes) return false;
+      if (filters.acceptsCards && !s.features.acceptsCards) return false;
+      return true;
+    });
+  }, [stations, filters]);
   
   // Dual choice
   const recommendations = useMemo(() => {
-    if (!userLoc || stations.length === 0) return { best: null, closest: null };
+    if (!userLoc || filteredStations.length === 0) return { best: null, closest: null };
 
-    const stationsWithDist = stations.map(s => ({
+    const stationsWithDist = filteredStations.map(s => ({
       ...s,
       distance: calculateDistance(userLoc[0], userLoc[1], s.lat, s.lng),
       points: calculatePoints(s.features)
@@ -80,7 +101,7 @@ function App() {
     })[0];
 
     return { best, closest };
-  }, [userLoc, stations]);
+  }, [userLoc, filteredStations]);
 
   const handleNavigate = (station: WashStation) => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`, '_blank');
@@ -126,12 +147,14 @@ function App() {
           Szukam myjni w Twojej okolicy...
         </div>
       ) : (
+        <div className="absolute inset-0 z-0 pointer-events-auto">
         <MapComponent 
           userLocation={userLoc} 
-          stations={stations} 
+          stations={filteredStations} 
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setIsSurveyOpen(true); }}
         />
+        </div>
       )}
 
       {/* PWA Install Button */}
@@ -267,17 +290,18 @@ function App() {
             </div>
             <p className="text-gray-400 mb-6">Szukaj myjni zawierających wybrane cechy.</p>
             <div className="grid grid-cols-2 gap-3">
-               {/* Mock filters */}
-               <SurveyBtn label="Karta" active />
-               <SurveyBtn label="+60s" active />
-               <SurveyBtn label="Aktywna piana" />
-               <SurveyBtn label="Szczotka" />
+               <FilterBtn label="Odkurzacz" isOn={filters.hasVacuum} onClick={() => setFilters({...filters, hasVacuum: !filters.hasVacuum})} />
+               <FilterBtn label="Szczotka" isOn={filters.hasBrush} onClick={() => setFilters({...filters, hasBrush: !filters.hasBrush})} />
+               <FilterBtn label="Rozmieniarka" isOn={filters.hasChanger} onClick={() => setFilters({...filters, hasChanger: !filters.hasChanger})} />
+               <FilterBtn label="Karta" isOn={filters.acceptsCards} onClick={() => setFilters({...filters, acceptsCards: !filters.acceptsCards})} />
+               <FilterBtn label="Banknoty" isOn={filters.acceptsBanknotes} onClick={() => setFilters({...filters, acceptsBanknotes: !filters.acceptsBanknotes})} />
+               <FilterBtn label="Bilon" isOn={filters.acceptsCoins} onClick={() => setFilters({...filters, acceptsCoins: !filters.acceptsCoins})} />
             </div>
             <button 
               onClick={() => setShowSearch(false)}
               className="w-full mt-8 bg-white text-black font-bold py-3 rounded-xl transition-colors"
             >
-              Pokaż wyniki (2)
+              Pokaż wyniki ({filteredStations.length})
             </button>
           </div>
         </div>
@@ -295,6 +319,24 @@ const SurveyBtn = ({ label, icon, active = false }: { label: string, icon?: Reac
       onClick={() => setIsOn(!isOn)}
       className={twMerge(
         "px-4 py-2 rounded-xl text-sm font-bold border transition-all flex items-center gap-2",
+        isOn 
+          ? "bg-brand-purple border-brand-lightPurple text-white" 
+          : "bg-dark-surfaceHover border-dark-border text-gray-400 hover:text-gray-200"
+      )}
+    >
+      {icon && isOn && icon}
+      {label}
+    </button>
+  )
+}
+
+// Komponent do filtrów
+const FilterBtn = ({ label, icon, isOn, onClick }: { label: string, icon?: React.ReactNode, isOn: boolean, onClick: () => void }) => {
+  return (
+    <button 
+      onClick={onClick}
+      className={twMerge(
+        "px-4 py-2 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2",
         isOn 
           ? "bg-brand-purple border-brand-lightPurple text-white" 
           : "bg-dark-surfaceHover border-dark-border text-gray-400 hover:text-gray-200"
