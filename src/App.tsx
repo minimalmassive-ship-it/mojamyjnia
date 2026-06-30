@@ -53,7 +53,7 @@ function App() {
           setStations(fetched);
           setIsLoading(false);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
       setUserLoc(WARSAW_CENTER);

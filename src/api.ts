@@ -62,12 +62,18 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
   `;
   
   try {
-    let url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-    let response = await fetch(url);
-    
-    if (!response.ok) {
-      url = `https://z.overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-      response = await fetch(url);
+    let response;
+    try {
+      const c1 = new AbortController();
+      const t1 = setTimeout(() => c1.abort(), 5000);
+      response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, { signal: c1.signal });
+      clearTimeout(t1);
+      if (!response.ok) throw new Error('Not ok');
+    } catch (e) {
+      const c2 = new AbortController();
+      const t2 = setTimeout(() => c2.abort(), 10000);
+      response = await fetch(`https://z.overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, { signal: c2.signal });
+      clearTimeout(t2);
     }
     
     if (!response.ok) {
