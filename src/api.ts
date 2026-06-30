@@ -55,36 +55,43 @@ const DEFAULT_FEATURES: WashFeatures = {
 
 // Fetch from OpenStreetMap Overpass API
 export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
-  const query = `[out:json][timeout:25];nwr["amenity"="car_wash"](around:10000,${lat},${lng});out center;`;
+  const query = `
+    [out:json];
+    node["amenity"="car_wash"](around:10000, ${lat}, ${lng});
+    out;
+  `;
   
   try {
     let url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
     let response = await fetch(url);
     
     if (!response.ok) {
-      // Fallback endpoint
       url = `https://z.overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
       response = await fetch(url);
     }
     
     if (!response.ok) {
+      alert("Błąd serwera mapy. Spróbuj odświeżyć.");
       throw new Error('Overpass API error: ' + response.statusText);
     }
     
     const data = await response.json();
     
-    // Parse OSM nodes, ways and relations
     const osmStations: WashStation[] = data.elements.map((el: any) => ({
       id: el.id.toString(),
       name: el.tags?.name || 'Myjnia bez nazwy',
-      lat: el.center?.lat || el.lat,
-      lng: el.center?.lon || el.lon,
-      features: { ...DEFAULT_FEATURES }, // default before supabase merge
+      lat: el.lat,
+      lng: el.lon,
+      features: { ...DEFAULT_FEATURES },
       points: calculatePoints(DEFAULT_FEATURES),
       isRated: false,
     }));
 
-    if (osmStations.length === 0) return [];
+    if (osmStations.length === 0) {
+      // Jeśli serwer zwrócił 0, spróbujmy wyświetlić chociaż alert
+      // alert("Brak myjni w promieniu 10km.");
+      return [];
+    }
 
     // Extract IDs to query Supabase
     const ids = osmStations.map(s => s.id);
