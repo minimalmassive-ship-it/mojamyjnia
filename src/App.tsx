@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, fetchStationsOffline, fetchCustomStations, submitSurvey, type WashStation, calculatePoints, geocodeCity, DEFAULT_FEATURES } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle, SlidersHorizontal } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Download, MapPin, AlertTriangle, SlidersHorizontal } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -359,8 +359,9 @@ function App() {
       setAddingCustomStation(null);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
-    } catch (e) {
-      alert("Wystąpił błąd podczas zapisu ocen. Spróbuj ponownie.");
+    } catch (e: any) {
+      console.error(e);
+      alert("Wystąpił błąd podczas zapisu ocen: " + (e?.message || JSON.stringify(e)));
     }
   };
 
@@ -634,9 +635,9 @@ function App() {
               <div>
                 <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Wyposażenie</div>
                 <div className="flex flex-wrap gap-2">
-                  <SurveyBtn label="Odkurzacz" selected={surveyStation.features.hasVacuum} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasVacuum: !surveyStation.features.hasVacuum}})} icon={<Check size={14}/>} />
-                  <SurveyBtn label="Szczotka" selected={surveyStation.features.hasBrush} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasBrush: !surveyStation.features.hasBrush}})} icon={<Check size={14}/>} />
-                  <SurveyBtn label="Rozmieniarka" selected={surveyStation.features.hasChanger} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasChanger: !surveyStation.features.hasChanger}})} icon={<Check size={14}/>} />
+                  <SurveyBtn label="Odkurzacz" selected={surveyStation.features.hasVacuum} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasVacuum: !surveyStation.features.hasVacuum}})} />
+                  <SurveyBtn label="Szczotka" selected={surveyStation.features.hasBrush} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasBrush: !surveyStation.features.hasBrush}})} />
+                  <SurveyBtn label="Rozmieniarka" selected={surveyStation.features.hasChanger} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasChanger: !surveyStation.features.hasChanger}})} />
                 </div>
               </div>
 
@@ -734,7 +735,7 @@ function App() {
 }
 
 // Komponent pomocniczy do przycisków ankiety
-const SurveyBtn = ({ label, icon, selected, onClick }: { label: string, icon?: React.ReactNode, selected?: boolean, onClick?: () => void }) => {
+const SurveyBtn = ({ label, selected, onClick }: { label: string, selected?: boolean, onClick?: () => void }) => {
   return (
     <button 
       onClick={onClick}
@@ -745,7 +746,6 @@ const SurveyBtn = ({ label, icon, selected, onClick }: { label: string, icon?: R
           : "bg-dark-surfaceHover border-dark-border text-gray-400 hover:text-gray-200"
       )}
     >
-      {icon && selected && icon}
       {label}
     </button>
   )
