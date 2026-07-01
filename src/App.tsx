@@ -298,17 +298,13 @@ function App() {
               title="Zmień styl mapy"
             >
               <div 
-                className={twMerge(
-                  "absolute inset-0 bg-cover bg-center transition-all duration-300",
-                  mapStyle === 'satellite' ? "brightness-[3] contrast-[1.5]" : "",
-                  mapStyle === 'dark' ? "brightness-95 contrast-125 saturate-50" : ""
-                )}
+                className="absolute inset-0 bg-cover bg-center transition-all duration-300"
                 style={{
                   backgroundImage: mapStyle === 'standard' 
-                    ? "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/18/86151/146381')" 
+                    ? "url('/map-thumb-sat.png')" 
                     : mapStyle === 'satellite'
-                    ? "url('https://a.basemaps.cartocdn.com/dark_all/18/146381/86151.png')"
-                    : "url('https://a.tile.openstreetmap.org/18/146381/86151.png')"
+                    ? "url('/map-thumb-dark.png')"
+                    : "url('/map-thumb-light.png')"
                 }}
               />
               <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-xl pointer-events-none" />
