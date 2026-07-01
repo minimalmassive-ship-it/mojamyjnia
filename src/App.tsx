@@ -298,11 +298,9 @@ function App() {
               title="Zmień styl mapy"
             >
               <div 
-                className={twMerge(
-                  "absolute inset-0 bg-cover bg-center transition-all duration-300",
-                  mapStyle === 'standard' ? 'scale-[1.8]' : 'scale-[1.4]'
-                )}
+                className="absolute inset-0 bg-cover bg-center transition-all duration-300"
                 style={{
+                  transform: mapStyle === 'standard' ? "scale(1.9)" : "scale(1.4)",
                   backgroundImage: mapStyle === 'standard' 
                     ? "url('/map-thumb-sat.png')" 
                     : mapStyle === 'satellite'
