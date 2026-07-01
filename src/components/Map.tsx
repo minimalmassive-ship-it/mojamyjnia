@@ -232,17 +232,17 @@ export const MapComponent: React.FC<{
         
         {mapStyle === 'standard' && (
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-            className="brightness-90 contrast-[1.1] saturate-[1.2]"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
+            className="brightness-90 saturate-50"
           />
         )}
         
         {mapStyle === 'dark' && (
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-            className="brightness-[1.5] contrast-[1.2]"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
+            className="invert hue-rotate-180 brightness-95 contrast-125"
           />
         )}
 
