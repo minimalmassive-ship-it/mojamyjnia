@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle, Layers } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -349,8 +349,8 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto relative">
-            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-gradient-to-b from-white/10 to-black/20 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/50 border-r-black/50 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
-              <div className="pl-4 py-3 flex items-center text-gray-300">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
+              <div className="pl-4 py-3 flex items-center text-gray-400">
                 <MapPin size={18} />
               </div>
               <input 
@@ -358,7 +358,7 @@ function App() {
                 placeholder="Miasto, ulica..." 
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-400 font-medium"
+                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-500 font-bold"
               />
               <button 
                 type="submit" 
@@ -377,26 +377,15 @@ function App() {
                   return 'standard';
                 });
               }}
-              className="relative w-12 h-12 rounded-xl shadow-lg border border-white/10 active:scale-95 transition-transform shrink-0 overflow-hidden group"
+              className="bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] active:scale-95 transition-transform shrink-0 relative z-10 flex items-center justify-center"
               title="Zmień styl mapy"
             >
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-all duration-300"
-                style={{
-                  transform: mapStyle === 'standard' ? "scale(3.0)" : "scale(1.4)",
-                  backgroundImage: mapStyle === 'standard' 
-                    ? "url('/map-thumb-sat.png')" 
-                    : mapStyle === 'satellite'
-                    ? "url('/map-thumb-dark.png')"
-                    : "url('/map-thumb-light.png')"
-                }}
-              />
-              <div className="absolute inset-0 ring-1 ring-inset ring-black/20 rounded-xl pointer-events-none" />
+              <Layers size={20} className={mapStyle === 'standard' ? 'text-gray-400' : mapStyle === 'satellite' ? 'text-green-400' : 'text-blue-400'} />
             </button>
 
             <button 
               onClick={() => setShowSearch(true)}
-              className="bg-gradient-to-b from-white/10 to-black/20 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/50 border-r-black/50 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 relative z-10"
+              className="bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] active:scale-95 transition-transform shrink-0 relative z-10"
             >
               <Search size={20} className="text-white drop-shadow-md" />
             </button>
@@ -408,11 +397,11 @@ function App() {
       {(deferredPrompt || isIOS) && (
         <button
           onClick={handleInstallClick}
-          className="absolute top-40 sm:top-28 right-4 z-10 bg-brand-blue text-white p-3 rounded-full shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform border border-white/20 flex items-center justify-center pointer-events-auto group"
+          className="absolute top-40 sm:top-28 right-4 z-10 bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] active:scale-95 transition-all flex items-center justify-center pointer-events-auto group text-brand-blue"
         >
-          <Download size={22} />
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap font-bold text-sm">
-            Zainstaluj Aplikację
+          <Download size={22} className="drop-shadow-md" />
+          <span className="max-w-0 overflow-hidden group-hover:max-w-[200px] group-hover:ml-3 transition-all duration-300 ease-in-out whitespace-nowrap font-black tracking-tight text-sm text-white drop-shadow-md">
+            POBIERZ APLIKACJĘ
           </span>
         </button>
       )}
@@ -426,7 +415,7 @@ function App() {
             <div className="absolute -inset-2 bg-cyan-500/30 blur-[30px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
             <button 
               onClick={() => handleNavigate(recommendations.alternative!)}
-              className="relative w-full h-full bg-gradient-to-br from-white/10 to-black/40 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/60 border-r-black/60 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_10px_rgba(0,0,0,0.6),0_20px_40px_rgba(0,0,0,0.6)]"
+              className="relative w-full h-full bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_10px_rgba(0,0,0,0.8),0_20px_40px_rgba(0,0,0,0.8)]"
             >
               <div className="text-cyan-400 text-[10px] uppercase tracking-wider font-extrabold text-center drop-shadow-md">
                 {recommendations.alternativeTitle}
@@ -447,7 +436,7 @@ function App() {
             <div className="absolute -inset-2 bg-green-500/30 blur-[30px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
             <button 
               onClick={() => handleNavigate(recommendations.best!)}
-              className="relative w-full h-full bg-gradient-to-br from-white/10 to-black/40 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/60 border-r-black/60 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_10px_rgba(0,0,0,0.6),0_20px_40px_rgba(0,0,0,0.6)]"
+              className="relative w-full h-full bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_10px_rgba(0,0,0,0.8),0_20px_40px_rgba(0,0,0,0.8)]"
             >
               <div className="text-green-400 text-[10px] uppercase tracking-wider font-extrabold drop-shadow-md">Najlepszy Wybór</div>
               <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-lg">{recommendations.best.name}</div>
