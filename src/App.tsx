@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
-import { fetchStationsNearby, fetchStationsOffline, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
+import { fetchStationsNearby, fetchStationsOffline, fetchCustomStations, submitSurvey, type WashStation, calculatePoints, geocodeCity, DEFAULT_FEATURES } from './api';
 import { calculateDistance } from './utils/distance';
 import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle, SlidersHorizontal } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
@@ -39,6 +39,7 @@ function App() {
 
   const [citySearch, setCitySearch] = useState('');
   const [isSearchingCity, setIsSearchingCity] = useState(false);
+  const [addingCustomStation, setAddingCustomStation] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     // Check if iOS
@@ -73,11 +74,11 @@ function App() {
   };
 
   useEffect(() => {
-    // Ładujemy na start cały kraj z pliku offline
     const loadAllStations = async () => {
       setIsLoading(true);
-      const fetched = await fetchStationsOffline();
-      setStations(fetched);
+      const fetchedOffline = await fetchStationsOffline();
+      const customStations = await fetchCustomStations();
+      setStations([...fetchedOffline, ...customStations]);
       setIsLoading(false);
     };
     loadAllStations();
@@ -145,7 +146,7 @@ function App() {
     
     setIsSearchingCity(true);
     // Przekazujemy obecną lokalizację, aby wyszukiwarka preferowała ulice/miejsca w pobliżu użytkownika
-    const coords = await geocodeCity(citySearch, userLoc?.[0], userLoc?.[1]);
+    const coords = await geocodeCity(citySearch);
     
     if (coords) {
       setUserLoc(coords);
@@ -172,6 +173,7 @@ function App() {
     acceptsCoins: false,
     acceptsBanknotes: false,
     acceptsCards: false,
+    acceptsTokens: false,
   });
 
   const filteredStations = useMemo(() => {
@@ -182,6 +184,7 @@ function App() {
       if (filters.acceptsCoins && !s.features.acceptsCoins) return false;
       if (filters.acceptsBanknotes && !s.features.acceptsBanknotes) return false;
       if (filters.acceptsCards && !s.features.acceptsCards) return false;
+      if (filters.acceptsTokens && !s.features.acceptsTokens) return false;
       
       if (filters.minTimePerPLN) {
         const timeValues: Record<string, number> = { '30s': 30, '45s': 45, '60s': 60, '75s': 75, '90s': 90 };
@@ -308,23 +311,72 @@ function App() {
   };
 
   const handleSurveySubmit = async () => {
-    if (surveyStation) {
-      try {
-        await submitSurvey(surveyStation.id, surveyStation.features, customName);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        
-        // Update local state
-        setStations(prev => prev.map(s => s.id === surveyStation.id ? { 
-          ...surveyStation, 
-          name: (customName && customName.trim() !== '') ? customName.trim() : surveyStation.name,
-          points: calculatePoints(surveyStation.features) 
-        } : s));
-      } catch (e) {
-        alert("Wystąpił błąd podczas zapisu ocen. Spróbuj ponownie.");
+    if (!surveyStation) return;
+    
+    // Jeśli dodajemy własną myjnię i nazwa jest pusta, ignoruj
+    if (addingCustomStation && !customName.trim()) return;
+
+    try {
+      await submitSurvey(
+        surveyStation.id, 
+        surveyStation.features, 
+        customName,
+        addingCustomStation?.lat,
+        addingCustomStation?.lng
+      );
+      
+      // Update local state
+      setStations(prev => prev.map(s => {
+        if (s.id === surveyStation.id) {
+          return {
+            ...surveyStation,
+            name: customName.trim() || surveyStation.name,
+            points: calculatePoints(surveyStation.features),
+            isRated: true,
+          };
+        }
+        return s;
+      }));
+      
+      // Jeśli to nowa myjnia, DODAĆ do tablicy jeśli jej tam jeszcze nie ma
+      if (addingCustomStation) {
+        setStations(prev => {
+          if (!prev.find(s => s.id === surveyStation.id)) {
+            return [...prev, {
+              ...surveyStation,
+              name: customName.trim(),
+              points: calculatePoints(surveyStation.features),
+              isRated: true,
+            }];
+          }
+          return prev;
+        });
       }
+
+      setIsSurveyOpen(false);
+      setSurveyStation(null);
+      setCustomName('');
+      setAddingCustomStation(null);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (e) {
+      alert("Wystąpił błąd podczas zapisu ocen. Spróbuj ponownie.");
     }
-    setIsSurveyOpen(false);
+  };
+
+  const handleMapLongPress = (lat: number, lng: number) => {
+    setAddingCustomStation({ lat, lng });
+    setCustomName('');
+    setSurveyStation({
+      id: `custom_${Date.now()}`,
+      name: 'Myjnia bez nazwy',
+      lat,
+      lng,
+      features: { ...DEFAULT_FEATURES, acceptsCoins: false },
+      points: 0,
+      isRated: false
+    });
+    setIsSurveyOpen(true);
   };
 
   const handleInstallClick = async () => {
@@ -394,6 +446,8 @@ function App() {
           mapStyle={mapStyle}
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setCustomName(''); setIsSurveyOpen(true); }}
+          onMapLongPress={handleMapLongPress}
+          addingCustomStation={addingCustomStation}
           recommendations={recommendations}
           routes={routes}
         />
@@ -525,33 +579,29 @@ function App() {
       {/* One Tap Survey Modal */}
       {isSurveyOpen && surveyStation && (
         <div className="absolute inset-0 z-[500] bg-black/60 backdrop-blur-sm flex items-end justify-center sm:items-center">
-          <div className="bg-dark-surface w-full sm:w-[400px] rounded-t-3xl sm:rounded-3xl p-6 pb-12 sm:pb-6 animate-in slide-in-from-bottom-10 border border-dark-border shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Oceń {surveyStation.name}</h2>
-              <button onClick={() => setIsSurveyOpen(false)} className="text-gray-400 hover:text-white p-2">
+          <div className="bg-dark-surface w-full sm:w-[400px] rounded-t-3xl sm:rounded-3xl p-5 mb-0 sm:mb-12 animate-in slide-in-from-bottom-10 border border-brand-blue/30 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">{addingCustomStation ? 'Nowa Myjnia' : `Oceń ${surveyStation.name}`}</h2>
+              <button onClick={() => { setIsSurveyOpen(false); setAddingCustomStation(null); }} className="text-gray-400 hover:text-white p-2">
                 <X size={24} />
               </button>
             </div>
             
-            <p className="text-sm text-gray-400 mb-6">Szybka weryfikacja cech. Zaznacz co zastałeś na miejscu. Zero pisania!</p>
-            
             {surveyStation.name === 'Myjnia bez nazwy' && (
               <div className="mb-4">
-                <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Dodaj nazwę (opcjonalnie)</div>
                 <input 
                   type="text" 
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
-                  placeholder="Np. BP, Orlen, Pure Auto..."
-                  className="w-full bg-black/30 border border-dark-border rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+                  placeholder="Wpisz nazwę myjni (wymagane dla nowej)"
+                  className="w-full bg-black/30 border border-dark-border rounded-xl px-4 py-2.5 text-white focus:border-brand-blue outline-none transition-colors text-sm"
                 />
               </div>
             )}
 
-            {/* Ankieta zamknięta zestawem cech w jednym rzędzie na sekcję (symulacja mobilna) */}
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Czas za 1 PLN</div>
+                <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Czas za 1 PLN</div>
                 <div className="flex gap-2">
                   <SurveyPriceBtn 
                     label="30s" 
@@ -582,27 +632,29 @@ function App() {
               </div>
               
               <div>
-                <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Wyposażenie</div>
+                <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Wyposażenie</div>
                 <div className="flex flex-wrap gap-2">
-                  <SurveyBtn label="Odkurzacz" icon={<Check size={14}/>} />
-                  <SurveyBtn label="Szczotka" icon={<Check size={14}/>} />
-                  <SurveyBtn label="Rozmieniarka" icon={<Check size={14}/>} />
+                  <SurveyBtn label="Odkurzacz" selected={surveyStation.features.hasVacuum} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasVacuum: !surveyStation.features.hasVacuum}})} icon={<Check size={14}/>} />
+                  <SurveyBtn label="Szczotka" selected={surveyStation.features.hasBrush} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasBrush: !surveyStation.features.hasBrush}})} icon={<Check size={14}/>} />
+                  <SurveyBtn label="Rozmieniarka" selected={surveyStation.features.hasChanger} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, hasChanger: !surveyStation.features.hasChanger}})} icon={<Check size={14}/>} />
                 </div>
               </div>
 
               <div>
-                <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Płatności</div>
+                <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Płatności</div>
                 <div className="flex flex-wrap gap-2">
-                  <SurveyBtn label="Bilon" />
-                  <SurveyBtn label="Banknoty" />
-                  <SurveyBtn label="Karta" />
+                  <SurveyBtn label="Bilon" selected={surveyStation.features.acceptsCoins} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, acceptsCoins: !surveyStation.features.acceptsCoins}})} />
+                  <SurveyBtn label="Banknoty" selected={surveyStation.features.acceptsBanknotes} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, acceptsBanknotes: !surveyStation.features.acceptsBanknotes}})} />
+                  <SurveyBtn label="Karta" selected={surveyStation.features.acceptsCards} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, acceptsCards: !surveyStation.features.acceptsCards}})} />
+                  <SurveyBtn label="Żetony" selected={surveyStation.features.acceptsTokens} onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, acceptsTokens: !surveyStation.features.acceptsTokens}})} />
                 </div>
               </div>
             </div>
 
             <button 
               onClick={handleSurveySubmit}
-              className="w-full mt-8 bg-brand-purple hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-colors text-lg"
+              disabled={!!addingCustomStation && !customName.trim()}
+              className="w-full mt-6 bg-brand-blue hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-3.5 rounded-xl transition-colors text-base"
             >
               Potwierdź i odbierz nagrodę
             </button>
@@ -613,11 +665,11 @@ function App() {
       {/* Gamification Toast - Kiełbasa dla usera */}
       {showToast && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[600] animate-in fade-in slide-in-from-top-10">
-          <div className="bg-brand-purple text-white px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(147,51,234,0.5)] flex items-center gap-4 border border-purple-400">
+          <div className="bg-brand-blue text-white px-6 py-4 rounded-2xl shadow-[0_10px_30px_rgba(59,130,246,0.5)] flex items-center gap-4 border border-blue-400">
             <Trophy className="text-yellow-400" size={28} />
             <div>
               <div className="font-bold text-lg">Dobra robota!</div>
-              <div className="text-sm text-purple-200">Zyskujesz +50 XP do rangi Janosika.</div>
+              <div className="text-sm text-blue-100">Zyskujesz +50 XP do rangi Janosika.</div>
             </div>
           </div>
         </div>
@@ -665,6 +717,7 @@ function App() {
                <FilterBtn label="Karta" isOn={filters.acceptsCards} onClick={() => setFilters({...filters, acceptsCards: !filters.acceptsCards})} />
                <FilterBtn label="Banknoty" isOn={filters.acceptsBanknotes} onClick={() => setFilters({...filters, acceptsBanknotes: !filters.acceptsBanknotes})} />
                <FilterBtn label="Bilon" isOn={filters.acceptsCoins} onClick={() => setFilters({...filters, acceptsCoins: !filters.acceptsCoins})} />
+               <FilterBtn label="Żetony" isOn={filters.acceptsTokens} onClick={() => setFilters({...filters, acceptsTokens: !filters.acceptsTokens})} />
             </div>
             <button 
               onClick={() => setShowSearch(false)}
@@ -681,19 +734,18 @@ function App() {
 }
 
 // Komponent pomocniczy do przycisków ankiety
-const SurveyBtn = ({ label, icon, active = false }: { label: string, icon?: React.ReactNode, active?: boolean }) => {
-  const [isOn, setIsOn] = useState(active);
+const SurveyBtn = ({ label, icon, selected, onClick }: { label: string, icon?: React.ReactNode, selected?: boolean, onClick?: () => void }) => {
   return (
     <button 
-      onClick={() => setIsOn(!isOn)}
+      onClick={onClick}
       className={twMerge(
         "px-4 py-2 rounded-xl text-sm font-bold border transition-all flex items-center gap-2",
-        isOn 
-          ? "bg-brand-purple border-brand-lightPurple text-white" 
+        selected 
+          ? "bg-brand-blue border-blue-400 text-white" 
           : "bg-dark-surfaceHover border-dark-border text-gray-400 hover:text-gray-200"
       )}
     >
-      {icon && isOn && icon}
+      {icon && selected && icon}
       {label}
     </button>
   )
@@ -707,7 +759,7 @@ const SurveyPriceBtn = ({ label, selected, onClick }: { label: string, selected:
       className={twMerge(
         "flex-1 py-2 px-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center",
         selected 
-          ? "bg-brand-purple border-brand-lightPurple text-white" 
+          ? "bg-brand-blue border-blue-400 text-white" 
           : "bg-dark-surfaceHover border-dark-border text-gray-400 hover:text-gray-200"
       )}
     >

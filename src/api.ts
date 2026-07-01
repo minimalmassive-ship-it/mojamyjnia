@@ -12,6 +12,7 @@ export type WashFeatures = {
   acceptsCoins: boolean;
   acceptsBanknotes: boolean;
   acceptsCards: boolean;
+  acceptsTokens: boolean;
   hasChanger: boolean;
 };
 
@@ -40,18 +41,20 @@ export function calculatePoints(features: WashFeatures): number {
   if (features.acceptsCoins) pts += 1;
   if (features.acceptsBanknotes) pts += 1;
   if (features.acceptsCards) pts += 1;
+  if (features.acceptsTokens) pts += 1;
   if (features.hasChanger) pts += 1;
 
   return pts;
 }
 
-const DEFAULT_FEATURES: WashFeatures = {
+export const DEFAULT_FEATURES: WashFeatures = {
   timePerPLN: '45s',
   hasVacuum: false,
   hasBrush: false,
-  acceptsCoins: true,
+  acceptsCoins: false,
   acceptsBanknotes: false,
   acceptsCards: false,
+  acceptsTokens: false,
   hasChanger: false,
 };
 
@@ -152,6 +155,7 @@ out center;`;
               acceptsCoins: dbEntry.accepts_coins || false,
               acceptsBanknotes: dbEntry.accepts_banknotes || false,
               acceptsCards: dbEntry.accepts_cards || false,
+              acceptsTokens: dbEntry.accepts_tokens || false,
               hasChanger: dbEntry.has_changer || false,
             };
             return {
@@ -177,7 +181,7 @@ out center;`;
   }
 }
 
-export async function submitSurvey(stationId: string, features: WashFeatures, newName?: string) {
+export async function submitSurvey(stationId: string, features: WashFeatures, newName?: string, lat?: number, lng?: number) {
   const payload: any = {
     id: stationId,
     time_per_pln: features.timePerPLN,
@@ -186,11 +190,18 @@ export async function submitSurvey(stationId: string, features: WashFeatures, ne
     accepts_coins: features.acceptsCoins,
     accepts_banknotes: features.acceptsBanknotes,
     accepts_cards: features.acceptsCards,
+    accepts_tokens: features.acceptsTokens,
     has_changer: features.hasChanger,
   };
   
   if (newName && newName.trim() !== '') {
     payload.name = newName.trim();
+  }
+
+  // Jeśli podano współrzędne, zapisujemy je (dla własnych myjni)
+  if (lat !== undefined && lng !== undefined) {
+    payload.lat = lat;
+    payload.lng = lng;
   }
 
   const { error } = await supabase
@@ -203,19 +214,9 @@ export async function submitSurvey(stationId: string, features: WashFeatures, ne
   }
 }
 
-export async function geocodeCity(cityName: string, currentLat?: number, currentLng?: number): Promise<[number, number] | null> {
+export async function geocodeCity(cityName: string): Promise<[number, number] | null> {
   try {
     let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=pl&limit=1`;
-    
-    // Jeżeli mamy lokalizację, preferujemy wyniki w promieniu ~50km
-    if (currentLat !== undefined && currentLng !== undefined) {
-      const offset = 0.5; // ~50km w stopniach
-      const left = currentLng - offset;
-      const right = currentLng + offset;
-      const top = currentLat + offset;
-      const bottom = currentLat - offset;
-      url += `&viewbox=${left},${top},${right},${bottom}&bounded=1`;
-    }
 
     const response = await fetch(url, {
       headers: {
@@ -231,5 +232,48 @@ export async function geocodeCity(cityName: string, currentLat?: number, current
   } catch (err) {
     console.error('Geocoding error:', err);
     return null;
+  }
+}
+
+export async function fetchCustomStations(): Promise<WashStation[]> {
+  try {
+    const { data: supabaseData, error } = await supabase
+      .from('wash_stations')
+      .select('*')
+      .not('lat', 'is', null)
+      .not('lng', 'is', null);
+
+    if (error) {
+      console.error('Błąd pobierania myjni customowych:', error);
+      return [];
+    }
+
+    if (!supabaseData) return [];
+
+    return supabaseData.map(dbEntry => {
+      const features: WashFeatures = {
+        timePerPLN: (dbEntry.time_per_pln as WashFeatures['timePerPLN']) || '45s',
+        hasVacuum: dbEntry.has_vacuum || false,
+        hasBrush: dbEntry.has_brush || false,
+        acceptsCoins: dbEntry.accepts_coins || false,
+        acceptsBanknotes: dbEntry.accepts_banknotes || false,
+        acceptsCards: dbEntry.accepts_cards || false,
+        acceptsTokens: dbEntry.accepts_tokens || false,
+        hasChanger: dbEntry.has_changer || false,
+      };
+      
+      return {
+        id: dbEntry.id,
+        name: dbEntry.name || 'Myjnia dodana przez użytkownika',
+        lat: Number(dbEntry.lat),
+        lng: Number(dbEntry.lng),
+        features,
+        points: calculatePoints(features),
+        isRated: true,
+      };
+    });
+  } catch (err) {
+    console.error('Błąd w pobieraniu customowych myjni:', err);
+    return [];
   }
 }

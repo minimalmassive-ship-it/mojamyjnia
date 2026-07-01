@@ -66,7 +66,7 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-const DynamicBoundsUpdater = ({ userLocation, recommendations, center }: { userLocation: [number, number], recommendations?: any, center: [number, number] }) => {
+const DynamicBoundsUpdater = ({ userLocation, recommendations, center, onMapLongPress }: { userLocation: [number, number], recommendations?: any, center: [number, number], onMapLongPress?: (lat: number, lng: number) => void }) => {
   const map = useMap();
   const [isUserInteracting, setIsUserInteracting] = useState(false);
 
@@ -74,6 +74,9 @@ const DynamicBoundsUpdater = ({ userLocation, recommendations, center }: { userL
   useMapEvents({
     dragstart: () => setIsUserInteracting(true),
     zoomstart: () => setIsUserInteracting(true),
+    contextmenu: (e) => {
+      if (onMapLongPress) onMapLongPress(e.latlng.lat, e.latlng.lng);
+    }
   });
 
   useEffect(() => {
@@ -252,9 +255,11 @@ export const MapComponent: React.FC<{
   mapStyle: 'standard' | 'dark' | 'satellite';
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
+  onMapLongPress?: (lat: number, lng: number) => void;
+  addingCustomStation?: {lat: number, lng: number} | null;
   recommendations?: any;
   routes?: { bestCoords: [number, number][] | null, bestDist: number | null, altCoords: [number, number][] | null, altDist: number | null };
-}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen, recommendations, routes }) => {
+}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen, onMapLongPress, addingCustomStation, recommendations, routes }) => {
   return (
     <div className="absolute inset-0 z-0 bg-dark-bg">
       <MapContainer 
@@ -264,7 +269,11 @@ export const MapComponent: React.FC<{
         attributionControl={false}
         className="w-full h-full"
       >
-        <DynamicBoundsUpdater center={mapCenter} userLocation={userLocation} recommendations={recommendations} />
+        <DynamicBoundsUpdater center={mapCenter} userLocation={userLocation} recommendations={recommendations} onMapLongPress={onMapLongPress} />
+        
+        {addingCustomStation && (
+          <Marker position={[addingCustomStation.lat, addingCustomStation.lng]} icon={createCustomIcon(0, false, false)} />
+        )}
         
         {mapStyle === 'standard' && (
           <TileLayer
