@@ -240,9 +240,9 @@ export const MapComponent: React.FC<{
         
         {mapStyle === 'dark' && (
           <TileLayer
-            url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-            attribution="&copy; Stadia Maps"
-            className="brightness-[2] contrast-125"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution="&copy; CARTO"
+            className="brightness-200"
           />
         )}
 
