@@ -234,6 +234,7 @@ export const MapComponent: React.FC<{
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             attribution="&copy; CARTO"
+            className="brightness-75 contrast-125"
           />
         )}
         
