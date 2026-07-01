@@ -232,9 +232,8 @@ export const MapComponent: React.FC<{
         
         {mapStyle === 'standard' && (
           <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-            className="brightness-[0.7] contrast-[1.5] saturate-[0.7]"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution="&copy; CARTO"
           />
         )}
         
@@ -242,7 +241,7 @@ export const MapComponent: React.FC<{
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution="&copy; CARTO"
-            className="brightness-[2.5] contrast-[1.2]"
+            className="brightness-125"
           />
         )}
 
