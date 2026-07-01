@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle, SlidersHorizontal } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -351,13 +351,16 @@ function App() {
       <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-dark-bg/90 to-transparent pointer-events-none">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pointer-events-auto">
           <div className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="Logo" className="w-10 h-10 drop-shadow-md" />
-            <h1 className="text-3xl font-black tracking-tighter text-white drop-shadow-md">
-              <span className="text-brand-blue">JANOSIK</span> UMYTY
+            <img src="/favicon.svg" alt="Logo" className="w-10 h-10 drop-shadow-xl" />
+            <h1 
+              className="text-3xl font-black tracking-tighter text-white"
+              style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6), 0 -1px 1px rgba(255,255,255,0.5)" }}
+            >
+              <span className="text-brand-blue" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,100,255,0.6), 0 -1px 1px rgba(255,255,255,0.5)" }}>JANOSIK</span> UMYTY
             </h1>
           </div>
           
-          <div className="flex items-center gap-2 w-full sm:w-auto relative">
+          <div className="flex flex-nowrap items-center gap-2 w-full sm:w-auto relative">
             <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
               <div className="pl-4 py-3 flex items-center text-gray-200">
                 <MapPin size={18} className="drop-shadow-md" />
@@ -400,9 +403,16 @@ function App() {
                     : "url('/map-thumb-light.png')"
                 }}
               />
-              <div className="absolute inset-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5)] bg-black/10 backdrop-blur-sm rounded-full pointer-events-none" />
+              <div className="absolute inset-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5)] bg-black/10 rounded-full pointer-events-none" />
             </button>
 
+            <button 
+              onClick={() => setShowSearch(true)}
+              className="relative w-[52px] h-[52px] flex items-center justify-center bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 z-10"
+              title="Filtry"
+            >
+              <SlidersHorizontal size={20} className="text-white drop-shadow-md" />
+            </button>
           </div>
         </div>
       </div>
@@ -429,14 +439,14 @@ function App() {
             <div className="absolute -inset-2 bg-cyan-500/20 blur-[20px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
             <button 
               onClick={() => handleNavigate(recommendations.alternative!)}
-              className="relative w-full h-full bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)]"
+              className="relative w-full h-full bg-[#0a1e29]/60 backdrop-blur-md border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)]"
             >
-              <div className="text-cyan-400 text-[10px] uppercase tracking-wider font-extrabold text-center drop-shadow-md">
+              <div className="text-cyan-300 text-[11px] uppercase tracking-wider font-extrabold text-center drop-shadow-md" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.9)" }}>
                 {recommendations.alternativeTitle}
-                {recommendations.alternativeReason && <div className="text-[9px] text-cyan-200 mt-0.5 opacity-80">{recommendations.alternativeReason}</div>}
+                {recommendations.alternativeReason && <div className="text-[10px] text-cyan-100 mt-0.5 opacity-90">{recommendations.alternativeReason}</div>}
               </div>
-              <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-lg">{recommendations.alternative.name}</div>
-              <div className="text-white font-bold flex items-center gap-1.5 bg-black/40 px-4 py-1.5 rounded-full border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] text-sm">
+              <div className="text-xl font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-2xl" style={{ textShadow: "0 2px 6px rgba(0,0,0,1)" }}>{recommendations.alternative.name}</div>
+              <div className="text-white font-bold flex items-center gap-1.5 bg-black/50 px-4 py-1.5 rounded-full border border-white/20 shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] text-sm">
                 <Navigation size={14} className="text-cyan-400 drop-shadow-md" />
                 {routes.altDist !== null ? routes.altDist.toFixed(1) : (recommendations.alternative as any).distance?.toFixed(1)} km
               </div>
@@ -450,10 +460,10 @@ function App() {
             <div className="absolute -inset-2 bg-green-500/20 blur-[20px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
             <button 
               onClick={() => handleNavigate(recommendations.best!)}
-              className="relative w-full h-full bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)]"
+              className="relative w-full h-full bg-[#0a2410]/60 backdrop-blur-md border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)]"
             >
-              <div className="text-green-400 text-[10px] uppercase tracking-wider font-extrabold drop-shadow-md">Najlepszy Wybór</div>
-              <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-lg">{recommendations.best.name}</div>
+              <div className="text-green-300 text-[11px] uppercase tracking-wider font-extrabold drop-shadow-md" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.9)" }}>Najlepszy Wybór</div>
+              <div className="text-xl font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-2xl" style={{ textShadow: "0 2px 6px rgba(0,0,0,1)" }}>{recommendations.best.name}</div>
               <div className="flex flex-col gap-2 w-full mt-1">
                 <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-full border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
                   <span className="text-white/70 text-xs font-semibold">Punkty</span>
