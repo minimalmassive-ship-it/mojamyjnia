@@ -294,11 +294,11 @@ function App() {
                   return 'standard';
                 });
               }}
-              className="relative w-12 h-12 rounded-xl shadow-xl border-2 border-white/20 active:scale-95 transition-transform shrink-0 overflow-hidden group"
+              className="relative w-12 h-12 rounded-xl shadow-lg border border-dark-border active:scale-95 transition-transform shrink-0 overflow-hidden group"
               title="Zmień styl mapy"
             >
               <div 
-                className="absolute inset-0 bg-cover bg-center transition-all duration-300"
+                className="absolute inset-0 bg-cover bg-center transition-all duration-300 scale-[1.4]"
                 style={{
                   backgroundImage: mapStyle === 'standard' 
                     ? "url('/map-thumb-sat.png')" 
