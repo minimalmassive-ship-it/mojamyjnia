@@ -217,7 +217,7 @@ export async function geocodeCity(cityName: string, currentLat?: number, current
       const right = currentLng + offset;
       const top = currentLat + offset;
       const bottom = currentLat - offset;
-      url += `&viewbox=${left},${top},${right},${bottom}`;
+      url += `&viewbox=${left},${top},${right},${bottom}&bounded=1`;
     }
 
     const response = await fetch(url, {
