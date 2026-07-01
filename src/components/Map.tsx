@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { type WashStation, calculatePoints, MAX_POINTS } from '../api';
@@ -66,11 +66,45 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-const LocationUpdater = ({ center }: { center: [number, number] }) => {
+const DynamicBoundsUpdater = ({ userLocation, recommendations, center }: { userLocation: [number, number], recommendations?: any, center: [number, number] }) => {
   const map = useMap();
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
+
+  // Zatrzymujemy auto-centrowanie gdy użytkownik sam przesuwa mapę
+  useMapEvents({
+    dragstart: () => setIsUserInteracting(true),
+    zoomstart: () => setIsUserInteracting(true),
+  });
+
   useEffect(() => {
-    map.setView(center, map.getZoom(), { animate: true });
-  }, [center, map]);
+    if (isUserInteracting) return;
+    
+    // Jeśli nie ma lokalizacji uzytkownika, centrujemy tam gdzie kliknął w wyszukiwarce (center)
+    if (!userLocation) {
+      map.setView(center, map.getZoom(), { animate: true });
+      return;
+    }
+
+    const bounds = L.latLngBounds([userLocation]);
+    let hasPoints = false;
+
+    if (recommendations?.best) {
+      bounds.extend([recommendations.best.lat, recommendations.best.lng]);
+      hasPoints = true;
+    }
+    if (recommendations?.alternative) {
+      bounds.extend([recommendations.alternative.lat, recommendations.alternative.lng]);
+      hasPoints = true;
+    }
+
+    if (hasPoints) {
+      // Padding żeby punkty nie były schowane pod nagłówkiem i dolnymi oknami
+      map.fitBounds(bounds, { animate: true, paddingBottomRight: [50, 200], paddingTopLeft: [50, 150], maxZoom: 15 });
+    } else {
+      map.setView(center, 14, { animate: true });
+    }
+  }, [userLocation, recommendations, center, map, isUserInteracting]);
+
   return null;
 };
 
@@ -218,7 +252,8 @@ export const MapComponent: React.FC<{
   mapStyle: 'standard' | 'dark' | 'satellite';
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
-}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen }) => {
+  recommendations?: any;
+}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen, recommendations }) => {
   return (
     <div className="absolute inset-0 z-0 bg-dark-bg">
       <MapContainer 
@@ -228,7 +263,7 @@ export const MapComponent: React.FC<{
         attributionControl={false}
         className="w-full h-full"
       >
-        <LocationUpdater center={mapCenter} />
+        <DynamicBoundsUpdater center={mapCenter} userLocation={userLocation} recommendations={recommendations} />
         
         {mapStyle === 'standard' && (
           <TileLayer
@@ -255,6 +290,29 @@ export const MapComponent: React.FC<{
         
         {/* User Location */}
         {hasLocationPermission && userLocation && <Marker position={userLocation} icon={userIcon} />}
+
+        {/* Dynamic Routes */}
+        {hasLocationPermission && userLocation && recommendations?.best && (
+          <Polyline 
+            positions={[userLocation, [recommendations.best.lat, recommendations.best.lng]]} 
+            pathOptions={{ color: '#22c55e', weight: 4, dashArray: '10, 10', opacity: 0.8 }} 
+          >
+             <Tooltip permanent direction="center" className="bg-green-900/90 text-green-400 border-green-500 rounded-md font-bold text-xs backdrop-blur-md">
+               {recommendations.best.distance.toFixed(1)} km
+             </Tooltip>
+          </Polyline>
+        )}
+        
+        {hasLocationPermission && userLocation && recommendations?.alternative && (
+          <Polyline 
+            positions={[userLocation, [recommendations.alternative.lat, recommendations.alternative.lng]]} 
+            pathOptions={{ color: '#f97316', weight: 4, dashArray: '10, 10', opacity: 0.8 }} 
+          >
+             <Tooltip permanent direction="center" className="bg-orange-950/90 text-orange-400 border-orange-500 rounded-md font-bold text-xs backdrop-blur-md">
+               {recommendations.alternative.distance.toFixed(1)} km
+             </Tooltip>
+          </Polyline>
+        )}
 
         {/* Stations within bounds */}
         <MarkersLayer stations={stations} onNavigate={onNavigate} onSurveyOpen={onSurveyOpen} />

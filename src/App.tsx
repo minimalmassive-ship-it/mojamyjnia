@@ -56,24 +56,32 @@ function App() {
 
     if (navigator.geolocation) {
       let watchCount = 0;
+      let bestAccuracy = Infinity;
+
       watchIdRef.current = navigator.geolocation.watchPosition(
         async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const accuracy = position.coords.accuracy;
           
+          // Update user location marker continuously as accuracy improves
           setUserLoc([lat, lng]);
           setHasLocationPermission(true);
 
-          if (watchCount === 0 || accuracy <= 50) {
+          // Center map on the first fix, or if we suddenly get a much better GPS lock in the first few updates
+          if (watchCount === 0 || (accuracy < bestAccuracy && accuracy <= 50)) {
             setMapCenter([lat, lng]);
           }
 
-          if (accuracy <= 50 || watchCount >= 6) {
-            if (watchIdRef.current !== null) {
-              navigator.geolocation.clearWatch(watchIdRef.current);
-            }
+          if (accuracy < bestAccuracy) {
+            bestAccuracy = accuracy;
           }
+
+          // We do NOT call clearWatch here anymore. 
+          // Browsers often start with inaccurate cell-tower triangulation. 
+          // By keeping the watch active, we allow the GPS hardware to "warm up" 
+          // and provide a highly accurate location after a few seconds.
+          
           watchCount++;
         },
         async (error) => {
@@ -82,7 +90,7 @@ function App() {
             setHasLocationPermission(false);
           }
         },
-        { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setHasLocationPermission(false);
@@ -251,6 +259,7 @@ function App() {
           mapStyle={mapStyle}
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setCustomName(''); setIsSurveyOpen(true); }}
+          recommendations={recommendations}
         />
         </div>
       )}
@@ -266,7 +275,7 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-dark-surface/90 backdrop-blur-md border border-dark-border rounded-xl overflow-hidden shadow-lg focus-within:border-brand-blue transition-colors">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/40 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg focus-within:border-brand-blue transition-colors">
               <div className="pl-3 py-3 flex items-center text-gray-400">
                 <MapPin size={18} />
               </div>
@@ -280,7 +289,7 @@ function App() {
               <button 
                 type="submit" 
                 disabled={isSearchingCity}
-                className="px-4 py-3 bg-brand-blue/20 text-brand-blue hover:bg-brand-blue hover:text-white transition-colors disabled:opacity-50 font-semibold text-sm"
+                className="px-4 py-3 bg-white/10 text-brand-blue hover:bg-brand-blue hover:text-white transition-colors disabled:opacity-50 font-semibold text-sm"
               >
                 Szukaj
               </button>
@@ -294,7 +303,7 @@ function App() {
                   return 'standard';
                 });
               }}
-              className="relative w-12 h-12 rounded-xl shadow-lg border border-dark-border active:scale-95 transition-transform shrink-0 overflow-hidden group"
+              className="relative w-12 h-12 rounded-xl shadow-lg border border-white/10 active:scale-95 transition-transform shrink-0 overflow-hidden group"
               title="Zmień styl mapy"
             >
               <div 
@@ -308,12 +317,12 @@ function App() {
                     : "url('/map-thumb-light.png')"
                 }}
               />
-              <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-xl pointer-events-none" />
+              <div className="absolute inset-0 ring-1 ring-inset ring-black/20 rounded-xl pointer-events-none" />
             </button>
 
             <button 
               onClick={() => setShowSearch(true)}
-              className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
+              className="bg-black/40 backdrop-blur-md border border-white/10 p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
             >
               <Search size={20} className="text-brand-blue" />
             </button>
@@ -325,7 +334,7 @@ function App() {
       {(deferredPrompt || isIOS) && (
         <button
           onClick={handleInstallClick}
-          className="absolute top-28 right-4 z-10 bg-brand-blue text-white p-3 rounded-full shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform border border-white/20 flex items-center justify-center pointer-events-auto group"
+          className="absolute top-40 sm:top-28 right-4 z-10 bg-brand-blue text-white p-3 rounded-full shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform border border-white/20 flex items-center justify-center pointer-events-auto group"
         >
           <Download size={22} />
           <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap font-bold text-sm">
@@ -341,14 +350,14 @@ function App() {
           {recommendations.alternative && (
           <button 
             onClick={() => handleNavigate(recommendations.alternative!)}
-            className="flex-1 bg-black/40 backdrop-blur-md border border-dark-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+            className="flex-1 bg-orange-950/40 backdrop-blur-md border border-orange-500/50 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_0_15px_rgba(249,115,22,0.2)]"
           >
-            <div className="text-gray-400 text-xs uppercase tracking-wider font-bold text-center">
+            <div className="text-orange-400 text-xs uppercase tracking-wider font-bold text-center">
               {recommendations.alternativeTitle}
-              {recommendations.alternativeReason && <div className="text-[10px] text-brand-blue/80 mt-0.5">{recommendations.alternativeReason}</div>}
+              {recommendations.alternativeReason && <div className="text-[10px] text-orange-300/80 mt-0.5">{recommendations.alternativeReason}</div>}
             </div>
             <div className="text-lg font-bold text-white text-center leading-tight h-10 flex items-center justify-center">{recommendations.alternative.name}</div>
-            <div className="text-brand-blue font-bold flex items-center gap-1">
+            <div className="text-orange-400 font-bold flex items-center gap-1">
               <Navigation size={14} />
               {(recommendations.alternative as any).distance?.toFixed(1)} km
             </div>
@@ -359,13 +368,19 @@ function App() {
           {recommendations.best && (
           <button 
             onClick={() => handleNavigate(recommendations.best!)}
-            className="flex-1 bg-brand-purple/20 backdrop-blur-md border border-brand-purple rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_0_20px_rgba(147,51,234,0.3)] relative overflow-hidden"
+            className="flex-1 bg-green-900/30 backdrop-blur-md border border-green-500 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_0_20px_rgba(34,197,94,0.3)] relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-16 h-16 bg-brand-purple/20 blur-2xl rounded-full" />
-            <div className="text-brand-lightPurple text-xs uppercase tracking-wider font-bold">Najlepszy Wybór</div>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/20 blur-2xl rounded-full" />
+            <div className="text-green-400 text-xs uppercase tracking-wider font-bold">Najlepszy Wybór</div>
             <div className="text-lg font-bold text-white text-center leading-tight h-10">{recommendations.best.name}</div>
-            <div className="text-white font-bold bg-brand-purple px-2 py-0.5 rounded-md text-sm">
-              {recommendations.best.points} pkt
+            <div className="flex items-center gap-2">
+              <div className="text-white font-bold bg-green-600 px-2 py-0.5 rounded-md text-sm">
+                {recommendations.best.points} pkt
+              </div>
+              <div className="text-green-400 font-bold flex items-center gap-1 text-sm">
+                <Navigation size={14} />
+                {(recommendations.best as any).distance?.toFixed(1)} km
+              </div>
             </div>
           </button>
           )}
