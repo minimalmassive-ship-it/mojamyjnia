@@ -230,11 +230,20 @@ export const MapComponent: React.FC<{
       >
         <LocationUpdater center={mapCenter} />
         
-        {mapStyle === 'dark' ? (
+        {mapStyle === 'standard' && (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+          />
+        )}
+        
+        {mapStyle === 'dark' && (
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
-        ) : (
+        )}
+
+        {mapStyle === 'satellite' && (
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"

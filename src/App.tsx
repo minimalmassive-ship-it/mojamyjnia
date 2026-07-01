@@ -11,7 +11,7 @@ function App() {
   const [userLoc, setUserLoc] = useState<[number, number]>(WARSAW_CENTER);
   const [mapCenter, setMapCenter] = useState<[number, number]>(WARSAW_CENTER);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
-  const [mapStyle, setMapStyle] = useState<'dark' | 'satellite'>('dark');
+  const [mapStyle, setMapStyle] = useState<'standard' | 'dark' | 'satellite'>('standard');
 
   const [stations, setStations] = useState<WashStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,7 +263,13 @@ function App() {
             </form>
 
             <button 
-              onClick={() => setMapStyle(prev => prev === 'dark' ? 'satellite' : 'dark')}
+              onClick={() => {
+                setMapStyle(prev => {
+                  if (prev === 'standard') return 'dark';
+                  if (prev === 'dark') return 'satellite';
+                  return 'standard';
+                });
+              }}
               className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
               title="Zmień styl mapy"
             >
