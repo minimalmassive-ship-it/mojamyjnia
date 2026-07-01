@@ -206,9 +206,21 @@ export async function submitSurvey(stationId: string, features: WashFeatures, ne
   }
 }
 
-export async function geocodeCity(cityName: string): Promise<[number, number] | null> {
+export async function geocodeCity(cityName: string, currentLat?: number, currentLng?: number): Promise<[number, number] | null> {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=pl&limit=1`, {
+    let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&countrycodes=pl&limit=1`;
+    
+    // Jeżeli mamy lokalizację, preferujemy wyniki w promieniu ~50km
+    if (currentLat !== undefined && currentLng !== undefined) {
+      const offset = 0.5; // ~50km w stopniach
+      const left = currentLng - offset;
+      const right = currentLng + offset;
+      const top = currentLat + offset;
+      const bottom = currentLat - offset;
+      url += `&viewbox=${left},${top},${right},${bottom}`;
+    }
+
+    const response = await fetch(url, {
       headers: {
         'User-Agent': 'MojaMyjnia/1.0'
       }

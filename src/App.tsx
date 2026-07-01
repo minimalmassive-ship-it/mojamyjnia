@@ -144,7 +144,8 @@ function App() {
     }
     
     setIsSearchingCity(true);
-    const coords = await geocodeCity(citySearch);
+    // Przekazujemy obecną lokalizację, aby wyszukiwarka preferowała ulice/miejsca w pobliżu użytkownika
+    const coords = await geocodeCity(citySearch, userLoc?.[0], userLoc?.[1]);
     
     if (coords) {
       setUserLoc(coords);
