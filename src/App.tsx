@@ -109,7 +109,7 @@ function App() {
   
   // Dual choice
   const recommendations = useMemo(() => {
-    if (!userLoc || filteredStations.length === 0) return { best: null, closest: null };
+    if (!userLoc || filteredStations.length === 0) return { best: null, alternative: null, alternativeTitle: '', alternativeReason: '' };
 
     const stationsWithDist = filteredStations.map(s => ({
       ...s,
@@ -117,16 +117,35 @@ function App() {
       points: calculatePoints(s.features)
     }));
 
-    // Szybka alternatywa = closest
-    const closest = [...stationsWithDist].sort((a, b) => a.distance - b.distance)[0];
-    
     // Najlepszy wybór = highest points, then closest
     const best = [...stationsWithDist].sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       return a.distance - b.distance;
     })[0];
 
-    return { best, closest };
+    // Szybka alternatywa = closest
+    let alternative = [...stationsWithDist].sort((a, b) => a.distance - b.distance)[0];
+    let alternativeTitle = 'Alternatywa';
+    let alternativeReason = '';
+
+    if (best && alternative && best.id === alternative.id) {
+      // Best is also the closest. Let's find the next closest as alternative
+      alternative = [...stationsWithDist].filter(s => s.id !== best.id).sort((a, b) => a.distance - b.distance)[0];
+      if (alternative) {
+        if (!alternative.isRated) {
+           alternativeTitle = 'Nieodkryta alternatywa';
+           alternativeReason = 'Oceń jako pierwszy!';
+        } else {
+           alternativeTitle = 'Dalsza alternatywa';
+           alternativeReason = 'Najbliższa z pozostałych';
+        }
+      }
+    } else if (alternative) {
+       alternativeTitle = 'Szybka alternatywa';
+       alternativeReason = 'Najbliżej Ciebie';
+    }
+
+    return { best, alternative, alternativeTitle, alternativeReason };
   }, [userLoc, filteredStations]);
 
   const handleNavigate = (station: WashStation) => {
@@ -134,7 +153,7 @@ function App() {
     // pod tym samym adresem, tylko znalazło myjnię w tych współrzędnych.
     const keyword = station.name !== 'Myjnia bez nazwy' ? station.name : 'myjnia samochodowa';
     const destination = `${keyword} ${station.lat},${station.lng}`;
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`, '_blank');
+    window.open(`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(destination)}`, '_blank');
   };
 
   const handleSurveySubmit = async () => {
@@ -246,17 +265,20 @@ function App() {
       {/* Dual Choice / Bottom Panel */}
       <div className="absolute bottom-0 left-0 right-0 z-10 p-4 pb-8 pointer-events-none">
         <div className="flex gap-4 max-w-md mx-auto pointer-events-auto">
-          {/* Szybka Alternatywa */}
-          {recommendations.closest && (
+          {/* Alternatywa */}
+          {recommendations.alternative && (
           <button 
-            onClick={() => handleNavigate(recommendations.closest!)}
+            onClick={() => handleNavigate(recommendations.alternative!)}
             className="flex-1 bg-dark-surface/90 backdrop-blur-md border border-dark-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
           >
-            <div className="text-gray-400 text-xs uppercase tracking-wider font-bold">Szybka Alternatywa</div>
-            <div className="text-lg font-bold text-white text-center leading-tight h-10">{recommendations.closest.name}</div>
+            <div className="text-gray-400 text-xs uppercase tracking-wider font-bold text-center">
+              {recommendations.alternativeTitle}
+              {recommendations.alternativeReason && <div className="text-[10px] text-brand-blue/80 mt-0.5">{recommendations.alternativeReason}</div>}
+            </div>
+            <div className="text-lg font-bold text-white text-center leading-tight h-10 flex items-center justify-center">{recommendations.alternative.name}</div>
             <div className="text-brand-blue font-bold flex items-center gap-1">
               <Navigation size={14} />
-              {(recommendations.closest as any).distance?.toFixed(1)} km
+              {(recommendations.alternative as any).distance?.toFixed(1)} km
             </div>
           </button>
           )}
