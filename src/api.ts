@@ -55,12 +55,26 @@ const DEFAULT_FEATURES: WashFeatures = {
   hasChanger: false,
 };
 
-// Fetch ALL car washes in Poland from the local static JSON file
-export async function fetchStationsNearby(): Promise<WashStation[]> {
+export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
   try {
-    const response = await fetch('/poland.json');
+    const query = `[out:json][timeout:25];
+(
+  node["amenity"="car_wash"](around:20000,${lat},${lng});
+  way["amenity"="car_wash"](around:20000,${lat},${lng});
+  relation["amenity"="car_wash"](around:20000,${lat},${lng});
+);
+out center;`;
+
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'data=' + encodeURIComponent(query)
+    });
+
     if (!response.ok) {
-      console.error("Brak pliku poland.json");
+      console.error("Błąd pobierania z Overpass API");
       return [];
     }
     

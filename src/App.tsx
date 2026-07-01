@@ -53,15 +53,26 @@ function App() {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-  useEffect(() => {
-    // Only fetch stations once for the whole country
-    const loadAllStations = async () => {
+  const lastFetchLocRef = useRef<[number, number] | null>(null);
+
+  const fetchStationsIfNeeded = async (lat: number, lng: number) => {
+    const lastLoc = lastFetchLocRef.current;
+    if (!lastLoc || calculateDistance(lat, lng, lastLoc[0], lastLoc[1]) > 10) {
       setIsLoading(true);
-      const fetched = await fetchStationsNearby();
-      setStations(fetched);
+      const fetched = await fetchStationsNearby(lat, lng);
+      if (fetched.length > 0) {
+        setStations(prev => {
+          const map = new Map(prev.map(s => [s.id, s]));
+          fetched.forEach(s => map.set(s.id, s));
+          return Array.from(map.values());
+        });
+      }
+      lastFetchLocRef.current = [lat, lng];
       setIsLoading(false);
-    };
-    loadAllStations();
+    }
+  };
+
+  useEffect(() => {
 
     if (navigator.geolocation) {
       let watchCount = 0;
@@ -83,6 +94,8 @@ function App() {
           if (watchCount === 0 || (accuracy < bestAccuracy && accuracy <= 50)) {
             setMapCenter([lat, lng]);
           }
+
+          fetchStationsIfNeeded(lat, lng);
 
           if (accuracy < bestAccuracy) {
             bestAccuracy = accuracy;
@@ -129,6 +142,7 @@ function App() {
       setUserLoc(coords);
       setMapCenter(coords);
       setHasLocationPermission(true);
+      fetchStationsIfNeeded(coords[0], coords[1]);
     } else {
       alert("Nie znaleziono takiej miejscowości.");
     }
@@ -382,6 +396,14 @@ function App() {
             </form>
 
             <button 
+              onClick={() => setShowSearch(true)}
+              className="relative w-[52px] h-[52px] flex items-center justify-center bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 z-10"
+              title="Filtry"
+            >
+              <SlidersHorizontal size={20} className="text-white drop-shadow-md" />
+            </button>
+
+            <button 
               onClick={() => {
                 setMapStyle(prev => {
                   if (prev === 'standard') return 'satellite';
@@ -404,14 +426,6 @@ function App() {
                 }}
               />
               <div className="absolute inset-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5)] bg-black/10 rounded-full pointer-events-none" />
-            </button>
-
-            <button 
-              onClick={() => setShowSearch(true)}
-              className="relative w-[52px] h-[52px] flex items-center justify-center bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 z-10"
-              title="Filtry"
-            >
-              <SlidersHorizontal size={20} className="text-white drop-shadow-md" />
             </button>
           </div>
         </div>
