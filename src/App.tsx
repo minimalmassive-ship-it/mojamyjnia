@@ -123,6 +123,7 @@ function App() {
   const [showSearch, setShowSearch] = useState(false);
 
   const [filters, setFilters] = useState({
+    minTimePerPLN: null as '30s' | '45s' | '60s' | '75s' | '90s' | null,
     hasVacuum: false,
     hasBrush: false,
     hasChanger: false,
@@ -139,6 +140,14 @@ function App() {
       if (filters.acceptsCoins && !s.features.acceptsCoins) return false;
       if (filters.acceptsBanknotes && !s.features.acceptsBanknotes) return false;
       if (filters.acceptsCards && !s.features.acceptsCards) return false;
+      
+      if (filters.minTimePerPLN) {
+        const timeValues: Record<string, number> = { '30s': 30, '45s': 45, '60s': 60, '75s': 75, '90s': 90 };
+        const stTime = timeValues[s.features.timePerPLN] || 45;
+        const reqTime = timeValues[filters.minTimePerPLN];
+        if (stTime < reqTime) return false;
+      }
+
       return true;
     });
   }, [stations, filters]);
@@ -383,9 +392,31 @@ function App() {
               <div>
                 <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">Czas za 1 PLN</div>
                 <div className="flex gap-2">
-                  <SurveyBtn label="45s" />
-                  <SurveyBtn label="60s" />
-                  <SurveyBtn label="+60s" />
+                  <SurveyPriceBtn 
+                    label="30s" 
+                    selected={surveyStation.features.timePerPLN === '30s'} 
+                    onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, timePerPLN: '30s'}})} 
+                  />
+                  <SurveyPriceBtn 
+                    label="45s" 
+                    selected={surveyStation.features.timePerPLN === '45s'} 
+                    onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, timePerPLN: '45s'}})} 
+                  />
+                  <SurveyPriceBtn 
+                    label="60s" 
+                    selected={surveyStation.features.timePerPLN === '60s'} 
+                    onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, timePerPLN: '60s'}})} 
+                  />
+                  <SurveyPriceBtn 
+                    label="75s" 
+                    selected={surveyStation.features.timePerPLN === '75s'} 
+                    onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, timePerPLN: '75s'}})} 
+                  />
+                  <SurveyPriceBtn 
+                    label="90s" 
+                    selected={surveyStation.features.timePerPLN === '90s'} 
+                    onClick={() => setSurveyStation({...surveyStation, features: {...surveyStation.features, timePerPLN: '90s'}})} 
+                  />
                 </div>
               </div>
               
@@ -442,6 +473,30 @@ function App() {
               </button>
             </div>
             <p className="text-gray-400 mb-6">Szukaj myjni zawierających wybrane cechy.</p>
+
+            <div className="mb-6">
+              <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide flex justify-between">
+                <span>Czas za 1 PLN</span>
+                <span className="text-xs normal-case font-normal">(co najmniej)</span>
+              </div>
+              <div className="flex gap-2">
+                {(['30s', '45s', '60s', '75s', '90s'] as const).map(time => (
+                  <SurveyPriceBtn 
+                    key={time}
+                    label={time} 
+                    selected={filters.minTimePerPLN === time} 
+                    onClick={() => {
+                      if (filters.minTimePerPLN === time) {
+                        setFilters({...filters, minTimePerPLN: null});
+                      } else {
+                        setFilters({...filters, minTimePerPLN: time});
+                      }
+                    }} 
+                  />
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
                <FilterBtn label="Odkurzacz" isOn={filters.hasVacuum} onClick={() => setFilters({...filters, hasVacuum: !filters.hasVacuum})} />
                <FilterBtn label="Szczotka" isOn={filters.hasBrush} onClick={() => setFilters({...filters, hasBrush: !filters.hasBrush})} />
@@ -478,6 +533,23 @@ const SurveyBtn = ({ label, icon, active = false }: { label: string, icon?: Reac
       )}
     >
       {icon && isOn && icon}
+      {label}
+    </button>
+  )
+}
+
+// Komponent do radio-wyboru (np. czas)
+const SurveyPriceBtn = ({ label, selected, onClick }: { label: string, selected: boolean, onClick: () => void }) => {
+  return (
+    <button 
+      onClick={onClick}
+      className={twMerge(
+        "flex-1 py-2 px-1 rounded-xl text-xs font-bold border transition-all flex items-center justify-center",
+        selected 
+          ? "bg-brand-purple border-brand-lightPurple text-white" 
+          : "bg-dark-surfaceHover border-dark-border text-gray-400 hover:text-gray-200"
+      )}
+    >
       {label}
     </button>
   )

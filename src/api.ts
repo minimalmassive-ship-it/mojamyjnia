@@ -6,7 +6,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export type WashFeatures = {
-  timePerPLN: '45s' | '60s' | '+60s';
+  timePerPLN: '30s' | '45s' | '60s' | '75s' | '90s';
   hasVacuum: boolean;
   hasBrush: boolean;
   acceptsCoins: boolean;
@@ -29,9 +29,11 @@ export const MAX_POINTS = 9;
 
 export function calculatePoints(features: WashFeatures): number {
   let pts = 0;
-  if (features.timePerPLN === '+60s') pts += 3;
+  if (features.timePerPLN === '90s') pts += 4;
+  else if (features.timePerPLN === '75s') pts += 3;
   else if (features.timePerPLN === '60s') pts += 2;
   else if (features.timePerPLN === '45s') pts += 1;
+  // 30s gives 0 points
 
   if (features.hasVacuum) pts += 1;
   if (features.hasBrush) pts += 1;
@@ -102,7 +104,7 @@ export async function fetchStationsNearby(): Promise<WashStation[]> {
           const dbEntry = dbMap.get(station.id);
           if (dbEntry) {
             const features: WashFeatures = {
-              timePerPLN: dbEntry.time_per_pln || '45s',
+              timePerPLN: (dbEntry.time_per_pln as WashFeatures['timePerPLN']) || '45s',
               hasVacuum: dbEntry.has_vacuum || false,
               hasBrush: dbEntry.has_brush || false,
               acceptsCoins: dbEntry.accepts_coins || false,
