@@ -234,7 +234,7 @@ export const MapComponent: React.FC<{
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
-            className="brightness-90 saturate-50"
+            className="brightness-95 contrast-125 saturate-50"
           />
         )}
         
@@ -242,7 +242,7 @@ export const MapComponent: React.FC<{
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
-            className="invert hue-rotate-180 brightness-95 contrast-125"
+            className="invert hue-rotate-180 brightness-105 contrast-150"
           />
         )}
 
