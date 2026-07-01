@@ -211,25 +211,35 @@ const MarkersLayer = ({ stations, onNavigate, onSurveyOpen }: {
 };
 
 export const MapComponent: React.FC<{
+  mapCenter: [number, number];
   userLocation: [number, number];
   hasLocationPermission: boolean;
   stations: WashStation[];
+  mapStyle: 'dark' | 'satellite';
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
-}> = ({ userLocation, hasLocationPermission, stations, onNavigate, onSurveyOpen }) => {
+}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen }) => {
   return (
     <div className="absolute inset-0 z-0 bg-dark-bg">
       <MapContainer 
-        center={userLocation} 
+        center={mapCenter} 
         zoom={12} 
         zoomControl={false}
         attributionControl={false}
         className="w-full h-full"
       >
-        <LocationUpdater center={userLocation} />
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
+        <LocationUpdater center={mapCenter} />
+        
+        {mapStyle === 'dark' ? (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
+        ) : (
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+          />
+        )}
         
         {/* User Location */}
         {hasLocationPermission && userLocation && <Marker position={userLocation} icon={userIcon} />}

@@ -2,14 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download, MapPin } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download, MapPin, Map } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
 
 function App() {
   const [userLoc, setUserLoc] = useState<[number, number]>(WARSAW_CENTER);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(WARSAW_CENTER);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
+  const [mapStyle, setMapStyle] = useState<'dark' | 'satellite'>('dark');
 
   const [stations, setStations] = useState<WashStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,22 +46,40 @@ function App() {
     loadAllStations();
 
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      let watchCount = 0;
+      const watchId = navigator.geolocation.watchPosition(
         async (position) => {
+          watchCount++;
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+          
           setUserLoc([lat, lng]);
+          setMapCenter([lat, lng]);
           setHasLocationPermission(true);
+
+          // Zatrzymujemy nasłuchiwanie jeśli dokładność spadnie poniżej 50 metrów
+          // lub jeśli otrzymaliśmy już 4 aktualizacje (żeby mapa nie latała w nieskończoność)
+          if (accuracy < 50 || watchCount >= 4) {
+            navigator.geolocation.clearWatch(watchId);
+          }
         },
         async (error) => {
-          console.error("Błąd lokalizacji. Używam domyślnej.", error);
-          setUserLoc(WARSAW_CENTER);
-          setHasLocationPermission(false);
+          console.error("Błąd lokalizacji:", error);
+          if (watchCount === 0) {
+            setUserLoc(WARSAW_CENTER);
+            setMapCenter(WARSAW_CENTER);
+            setHasLocationPermission(false);
+          }
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
+      
+      // Awaryjne wyłączenie nasłuchiwania po 15 sekundach
+      setTimeout(() => navigator.geolocation.clearWatch(watchId), 15000);
     } else {
       setUserLoc(WARSAW_CENTER);
+      setMapCenter(WARSAW_CENTER);
       setHasLocationPermission(false);
     }
   }, []);
@@ -73,6 +93,7 @@ function App() {
     
     if (coords) {
       setUserLoc(coords);
+      setMapCenter(coords);
       setHasLocationPermission(true);
     } else {
       alert("Nie znaleziono takiej miejscowości.");
@@ -199,9 +220,11 @@ function App() {
       ) : (
         <div className="absolute inset-0 z-0 pointer-events-auto">
         <MapComponent 
+          mapCenter={mapCenter}
           userLocation={userLoc} 
           hasLocationPermission={hasLocationPermission}
           stations={filteredStations} 
+          mapStyle={mapStyle}
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setCustomName(''); setIsSurveyOpen(true); }}
         />
@@ -238,6 +261,14 @@ function App() {
                 Szukaj
               </button>
             </form>
+
+            <button 
+              onClick={() => setMapStyle(prev => prev === 'dark' ? 'satellite' : 'dark')}
+              className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
+              title="Zmień styl mapy"
+            >
+              <Map size={20} className="text-brand-blue" />
+            </button>
 
             <button 
               onClick={() => setShowSearch(true)}
