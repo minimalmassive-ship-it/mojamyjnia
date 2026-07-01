@@ -242,6 +242,7 @@ export const MapComponent: React.FC<{
           <TileLayer
             url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
             attribution="&copy; Stadia Maps"
+            className="brightness-[2] contrast-125"
           />
         )}
 
