@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download, MapPin, Map } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download, MapPin, Moon, Sun, Globe } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -14,7 +14,7 @@ function App() {
   
   const [mapStyle, setMapStyle] = useState<'standard' | 'dark' | 'satellite'>(() => {
     const saved = localStorage.getItem('mapStyle');
-    return (saved === 'satellite' || saved === 'dark' || saved === 'standard') ? saved : 'dark';
+    return (saved === 'satellite' || saved === 'dark' || saved === 'standard') ? saved : 'standard';
   });
 
   useEffect(() => {
@@ -289,15 +289,17 @@ function App() {
             <button 
               onClick={() => {
                 setMapStyle(prev => {
-                  if (prev === 'standard') return 'dark';
-                  if (prev === 'dark') return 'satellite';
+                  if (prev === 'standard') return 'satellite';
+                  if (prev === 'satellite') return 'dark';
                   return 'standard';
                 });
               }}
               className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
               title="Zmień styl mapy"
             >
-              <Map size={20} className="text-brand-blue" />
+              {mapStyle === 'standard' && <Globe size={20} className="text-brand-blue" />}
+              {mapStyle === 'satellite' && <Moon size={20} className="text-brand-blue" />}
+              {mapStyle === 'dark' && <Sun size={20} className="text-brand-blue" />}
             </button>
 
             <button 
