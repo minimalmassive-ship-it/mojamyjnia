@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
@@ -12,6 +12,7 @@ function App() {
   const [mapCenter, setMapCenter] = useState<[number, number]>(WARSAW_CENTER);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [mapStyle, setMapStyle] = useState<'standard' | 'dark' | 'satellite'>('standard');
+  const watchIdRef = useRef<number | null>(null);
 
   const [stations, setStations] = useState<WashStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,46 +48,52 @@ function App() {
 
     if (navigator.geolocation) {
       let watchCount = 0;
-      const watchId = navigator.geolocation.watchPosition(
+      watchIdRef.current = navigator.geolocation.watchPosition(
         async (position) => {
-          watchCount++;
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const accuracy = position.coords.accuracy;
           
           setUserLoc([lat, lng]);
-          setMapCenter([lat, lng]);
           setHasLocationPermission(true);
 
-          // Zatrzymujemy nasłuchiwanie jeśli dokładność spadnie poniżej 50 metrów
-          // lub jeśli otrzymaliśmy już 4 aktualizacje (żeby mapa nie latała w nieskończoność)
-          if (accuracy < 50 || watchCount >= 4) {
-            navigator.geolocation.clearWatch(watchId);
+          if (watchCount === 0 || accuracy <= 50) {
+            setMapCenter([lat, lng]);
           }
+
+          if (accuracy <= 50 || watchCount >= 6) {
+            if (watchIdRef.current !== null) {
+              navigator.geolocation.clearWatch(watchIdRef.current);
+            }
+          }
+          watchCount++;
         },
         async (error) => {
           console.error("Błąd lokalizacji:", error);
-          if (watchCount === 0) {
-            setUserLoc(WARSAW_CENTER);
-            setMapCenter(WARSAW_CENTER);
+          if (error.code === 1) {
             setHasLocationPermission(false);
           }
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
       );
-      
-      // Awaryjne wyłączenie nasłuchiwania po 15 sekundach
-      setTimeout(() => navigator.geolocation.clearWatch(watchId), 15000);
     } else {
-      setUserLoc(WARSAW_CENTER);
-      setMapCenter(WARSAW_CENTER);
       setHasLocationPermission(false);
     }
+
+    return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
 
   const handleCitySearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!citySearch.trim()) return;
+
+    if (watchIdRef.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
     
     setIsSearchingCity(true);
     const coords = await geocodeCity(citySearch);
