@@ -297,7 +297,7 @@ function App() {
       {(deferredPrompt || isIOS) && (
         <button
           onClick={handleInstallClick}
-          className="absolute bottom-40 right-4 z-10 bg-brand-blue text-white p-3 rounded-full shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform border border-white/20 flex items-center justify-center pointer-events-auto group"
+          className="absolute top-28 right-4 z-10 bg-brand-blue text-white p-3 rounded-full shadow-lg shadow-brand-blue/30 active:scale-95 transition-transform border border-white/20 flex items-center justify-center pointer-events-auto group"
         >
           <Download size={22} />
           <span className="max-w-0 overflow-hidden group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 ease-in-out whitespace-nowrap font-bold text-sm">
@@ -307,13 +307,13 @@ function App() {
       )}
 
       {/* Dual Choice / Bottom Panel */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 pb-8 pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 pb-16 sm:pb-8 pointer-events-none">
         <div className="flex gap-4 max-w-md mx-auto pointer-events-auto">
           {/* Alternatywa */}
           {recommendations.alternative && (
           <button 
             onClick={() => handleNavigate(recommendations.alternative!)}
-            className="flex-1 bg-dark-surface/90 backdrop-blur-md border border-dark-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+            className="flex-1 bg-black/40 backdrop-blur-md border border-dark-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
           >
             <div className="text-gray-400 text-xs uppercase tracking-wider font-bold text-center">
               {recommendations.alternativeTitle}
