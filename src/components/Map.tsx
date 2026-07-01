@@ -215,7 +215,7 @@ export const MapComponent: React.FC<{
   userLocation: [number, number];
   hasLocationPermission: boolean;
   stations: WashStation[];
-  mapStyle: 'dark' | 'satellite';
+  mapStyle: 'standard' | 'dark' | 'satellite';
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
 }> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen }) => {
