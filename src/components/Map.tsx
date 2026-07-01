@@ -234,15 +234,15 @@ export const MapComponent: React.FC<{
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
-            className="brightness-95 contrast-125 saturate-50"
+            className="brightness-[0.7] contrast-[1.5] saturate-[0.7]"
           />
         )}
         
         {mapStyle === 'dark' && (
           <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-            className="invert hue-rotate-180 brightness-105 contrast-150"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution="&copy; CARTO"
+            className="brightness-[2.5] contrast-[1.2]"
           />
         )}
 
