@@ -253,7 +253,8 @@ export const MapComponent: React.FC<{
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
   recommendations?: any;
-}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen, recommendations }) => {
+  routes?: { bestCoords: [number, number][] | null, bestDist: number | null, altCoords: [number, number][] | null, altDist: number | null };
+}> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen, recommendations, routes }) => {
   return (
     <div className="absolute inset-0 z-0 bg-dark-bg">
       <MapContainer 
@@ -294,22 +295,22 @@ export const MapComponent: React.FC<{
         {/* Dynamic Routes */}
         {hasLocationPermission && userLocation && recommendations?.best && (
           <Polyline 
-            positions={[userLocation, [recommendations.best.lat, recommendations.best.lng]]} 
-            pathOptions={{ color: '#22c55e', weight: 4, dashArray: '10, 10', opacity: 0.8 }} 
+            positions={routes?.bestCoords && routes.bestCoords.length > 0 ? routes.bestCoords : [userLocation, [recommendations.best.lat, recommendations.best.lng]]} 
+            pathOptions={{ color: '#22c55e', weight: 5, dashArray: routes?.bestCoords ? undefined : '10, 10', opacity: 0.9, lineCap: 'round', lineJoin: 'round' }} 
           >
-             <Tooltip permanent direction="center" className="bg-green-900/90 text-green-400 border-green-500 rounded-md font-bold text-xs backdrop-blur-md">
-               {recommendations.best.distance.toFixed(1)} km
+             <Tooltip permanent direction="center" className="bg-green-900/90 text-green-400 border-green-500 rounded-md font-bold text-xs backdrop-blur-md shadow-lg">
+               {routes?.bestDist !== null && routes?.bestDist !== undefined ? routes.bestDist.toFixed(1) : recommendations.best.distance.toFixed(1)} km
              </Tooltip>
           </Polyline>
         )}
         
         {hasLocationPermission && userLocation && recommendations?.alternative && (
           <Polyline 
-            positions={[userLocation, [recommendations.alternative.lat, recommendations.alternative.lng]]} 
-            pathOptions={{ color: '#f97316', weight: 4, dashArray: '10, 10', opacity: 0.8 }} 
+            positions={routes?.altCoords && routes.altCoords.length > 0 ? routes.altCoords : [userLocation, [recommendations.alternative.lat, recommendations.alternative.lng]]} 
+            pathOptions={{ color: '#22d3ee', weight: 5, dashArray: routes?.altCoords ? undefined : '10, 10', opacity: 0.9, lineCap: 'round', lineJoin: 'round' }} 
           >
-             <Tooltip permanent direction="center" className="bg-orange-950/90 text-orange-400 border-orange-500 rounded-md font-bold text-xs backdrop-blur-md">
-               {recommendations.alternative.distance.toFixed(1)} km
+             <Tooltip permanent direction="center" className="bg-cyan-950/90 text-cyan-400 border-cyan-500 rounded-md font-bold text-xs backdrop-blur-md shadow-lg">
+               {routes?.altDist !== null && routes?.altDist !== undefined ? routes.altDist.toFixed(1) : recommendations.alternative.distance.toFixed(1)} km
              </Tooltip>
           </Polyline>
         )}

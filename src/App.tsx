@@ -12,6 +12,14 @@ function App() {
   const [mapCenter, setMapCenter] = useState<[number, number]>(WARSAW_CENTER);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   
+  const [routes, setRoutes] = useState<{
+    bestCoords: [number, number][] | null;
+    bestDist: number | null;
+    altCoords: [number, number][] | null;
+    altDist: number | null;
+  }>({ bestCoords: null, bestDist: null, altCoords: null, altDist: null });
+  const lastRouteParamsRef = useRef({ lat: 0, lng: 0, bestId: '', altId: '' });
+  
   const [mapStyle, setMapStyle] = useState<'standard' | 'dark' | 'satellite'>(() => {
     const saved = localStorage.getItem('mapStyle');
     return (saved === 'satellite' || saved === 'dark' || saved === 'standard') ? saved : 'standard';
@@ -201,6 +209,61 @@ function App() {
     return { best, alternative, alternativeTitle, alternativeReason };
   }, [userLoc, filteredStations]);
 
+  // Fetch routes
+  useEffect(() => {
+    let active = true;
+    const fetchRoutes = async () => {
+      if (!userLoc) return;
+      
+      const bestId = recommendations.best?.id || '';
+      const altId = recommendations.alternative?.id || '';
+      
+      // Calculate distance from last fetched location
+      const distFromLast = calculateDistance(userLoc[0], userLoc[1], lastRouteParamsRef.current.lat, lastRouteParamsRef.current.lng) * 1000;
+      
+      // Only fetch if moved > 50 meters or if recommended stations changed
+      if (distFromLast < 50 && lastRouteParamsRef.current.bestId === bestId && lastRouteParamsRef.current.altId === altId) {
+        return; 
+      }
+      
+      lastRouteParamsRef.current = { lat: userLoc[0], lng: userLoc[1], bestId, altId };
+
+      let bestCoords: [number, number][] | null = null;
+      let bestDist: number | null = null;
+      let altCoords: [number, number][] | null = null;
+      let altDist: number | null = null;
+
+      try {
+        if (recommendations.best) {
+          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${userLoc[1]},${userLoc[0]};${recommendations.best.lng},${recommendations.best.lat}?overview=full&geometries=geojson`);
+          const data = await res.json();
+          if (data.routes && data.routes[0]) {
+             bestCoords = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+             bestDist = data.routes[0].distance / 1000;
+          }
+        }
+        
+        if (recommendations.alternative) {
+          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${userLoc[1]},${userLoc[0]};${recommendations.alternative.lng},${recommendations.alternative.lat}?overview=full&geometries=geojson`);
+          const data = await res.json();
+          if (data.routes && data.routes[0]) {
+             altCoords = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+             altDist = data.routes[0].distance / 1000;
+          }
+        }
+        
+        if (active) {
+          setRoutes({ bestCoords, bestDist, altCoords, altDist });
+        }
+      } catch (e) {
+        console.error("OSRM error:", e);
+      }
+    };
+    
+    const timeout = setTimeout(fetchRoutes, 500);
+    return () => { active = false; clearTimeout(timeout); };
+  }, [userLoc, recommendations.best?.id, recommendations.alternative?.id]);
+
   const handleNavigate = (station: WashStation) => {
     // Dodajemy "myjnia" lub nazwę do zapytania, żeby Google Maps nie snapowało do przypadkowych punktów (np. DHL)
     // pod tym samym adresem, tylko znalazło myjnię w tych współrzędnych.
@@ -260,6 +323,7 @@ function App() {
           onNavigate={handleNavigate}
           onSurveyOpen={(station) => { setSurveyStation({...station}); setCustomName(''); setIsSurveyOpen(true); }}
           recommendations={recommendations}
+          routes={routes}
         />
         </div>
       )}
@@ -275,8 +339,8 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/40 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg focus-within:border-brand-blue transition-colors">
-              <div className="pl-3 py-3 flex items-center text-gray-400">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.3)] focus-within:border-brand-blue transition-colors">
+              <div className="pl-3 py-3 flex items-center text-gray-300">
                 <MapPin size={18} />
               </div>
               <input 
@@ -284,7 +348,7 @@ function App() {
                 placeholder="Miasto, ulica..." 
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-500"
+                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-400"
               />
               <button 
                 type="submit" 
@@ -322,9 +386,9 @@ function App() {
 
             <button 
               onClick={() => setShowSearch(true)}
-              className="bg-black/40 backdrop-blur-md border border-white/10 p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
+              className="bg-white/10 backdrop-blur-2xl border border-white/20 p-3.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] active:scale-95 transition-transform shrink-0"
             >
-              <Search size={20} className="text-brand-blue" />
+              <Search size={20} className="text-white" />
             </button>
           </div>
         </div>
@@ -350,16 +414,16 @@ function App() {
           {recommendations.alternative && (
           <button 
             onClick={() => handleNavigate(recommendations.alternative!)}
-            className="flex-1 bg-orange-950/40 backdrop-blur-md border border-orange-500/50 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_0_15px_rgba(249,115,22,0.2)]"
+            className="flex-1 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_8px_30px_rgb(0,0,0,0.3)]"
           >
-            <div className="text-orange-400 text-xs uppercase tracking-wider font-bold text-center">
+            <div className="text-cyan-400 text-xs uppercase tracking-wider font-bold text-center">
               {recommendations.alternativeTitle}
-              {recommendations.alternativeReason && <div className="text-[10px] text-orange-300/80 mt-0.5">{recommendations.alternativeReason}</div>}
+              {recommendations.alternativeReason && <div className="text-[10px] text-cyan-200 mt-0.5">{recommendations.alternativeReason}</div>}
             </div>
             <div className="text-lg font-bold text-white text-center leading-tight h-10 flex items-center justify-center">{recommendations.alternative.name}</div>
-            <div className="text-orange-400 font-bold flex items-center gap-1">
+            <div className="text-cyan-400 font-bold flex items-center gap-1">
               <Navigation size={14} />
-              {(recommendations.alternative as any).distance?.toFixed(1)} km
+              {routes.altDist !== null ? routes.altDist.toFixed(1) : (recommendations.alternative as any).distance?.toFixed(1)} km
             </div>
           </button>
           )}
@@ -368,9 +432,9 @@ function App() {
           {recommendations.best && (
           <button 
             onClick={() => handleNavigate(recommendations.best!)}
-            className="flex-1 bg-green-900/30 backdrop-blur-md border border-green-500 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_0_20px_rgba(34,197,94,0.3)] relative overflow-hidden"
+            className="flex-1 bg-white/15 backdrop-blur-2xl border border-white/30 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_8px_30px_rgba(34,197,94,0.3)] relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/20 blur-2xl rounded-full" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/20 blur-3xl rounded-full" />
             <div className="text-green-400 text-xs uppercase tracking-wider font-bold">Najlepszy Wybór</div>
             <div className="text-lg font-bold text-white text-center leading-tight h-10">{recommendations.best.name}</div>
             <div className="flex items-center gap-2">
@@ -379,7 +443,7 @@ function App() {
               </div>
               <div className="text-green-400 font-bold flex items-center gap-1 text-sm">
                 <Navigation size={14} />
-                {(recommendations.best as any).distance?.toFixed(1)} km
+                {routes.bestDist !== null ? routes.bestDist.toFixed(1) : (recommendations.best as any).distance?.toFixed(1)} km
               </div>
             </div>
           </button>
