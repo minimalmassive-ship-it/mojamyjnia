@@ -348,8 +348,8 @@ function App() {
             </h1>
           </div>
           
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/40 border-r-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),_0_15px_35px_rgba(0,0,0,0.5)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative">
+          <div className="flex items-center gap-2 w-full sm:w-auto relative">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-gradient-to-b from-white/10 to-black/20 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/50 border-r-black/50 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
               <div className="pl-4 py-3 flex items-center text-gray-300">
                 <MapPin size={18} />
               </div>
@@ -396,9 +396,9 @@ function App() {
 
             <button 
               onClick={() => setShowSearch(true)}
-              className="bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/40 border-r-black/40 p-4 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),_0_15px_35px_rgba(0,0,0,0.5)] active:scale-95 transition-transform shrink-0"
+              className="bg-gradient-to-b from-white/10 to-black/20 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/50 border-r-black/50 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 relative z-10"
             >
-              <Search size={20} className="text-white" />
+              <Search size={20} className="text-white drop-shadow-md" />
             </button>
           </div>
         </div>
@@ -422,46 +422,50 @@ function App() {
         <div className="flex gap-4 max-w-md mx-auto pointer-events-auto">
           {/* Alternatywa */}
           {recommendations.alternative && (
-          <button 
-            onClick={() => handleNavigate(recommendations.alternative!)}
-            className="flex-1 bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/40 border-r-black/40 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden group"
-          >
-            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-cyan-500/40 blur-[40px] rounded-full pointer-events-none group-hover:bg-cyan-400/50 transition-colors" />
-            <div className="text-cyan-400 text-[10px] uppercase tracking-wider font-extrabold text-center relative z-10 drop-shadow-md">
-              {recommendations.alternativeTitle}
-              {recommendations.alternativeReason && <div className="text-[9px] text-cyan-200 mt-0.5 opacity-80">{recommendations.alternativeReason}</div>}
-            </div>
-            <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center relative z-10 drop-shadow-md">{recommendations.alternative.name}</div>
-            <div className="text-white font-bold flex items-center gap-1.5 bg-black/50 px-3 py-1.5 rounded-full border border-white/10 shadow-inner relative z-10 text-sm">
-              <Navigation size={14} className="text-cyan-400" />
-              {routes.altDist !== null ? routes.altDist.toFixed(1) : (recommendations.alternative as any).distance?.toFixed(1)} km
-            </div>
-          </button>
+          <div className="flex-1 relative group">
+            <div className="absolute -inset-2 bg-cyan-500/30 blur-[30px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
+            <button 
+              onClick={() => handleNavigate(recommendations.alternative!)}
+              className="relative w-full h-full bg-gradient-to-br from-white/10 to-black/40 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/60 border-r-black/60 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_10px_rgba(0,0,0,0.6),0_20px_40px_rgba(0,0,0,0.6)]"
+            >
+              <div className="text-cyan-400 text-[10px] uppercase tracking-wider font-extrabold text-center drop-shadow-md">
+                {recommendations.alternativeTitle}
+                {recommendations.alternativeReason && <div className="text-[9px] text-cyan-200 mt-0.5 opacity-80">{recommendations.alternativeReason}</div>}
+              </div>
+              <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-lg">{recommendations.alternative.name}</div>
+              <div className="text-white font-bold flex items-center gap-1.5 bg-black/40 px-4 py-1.5 rounded-full border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] text-sm">
+                <Navigation size={14} className="text-cyan-400 drop-shadow-md" />
+                {routes.altDist !== null ? routes.altDist.toFixed(1) : (recommendations.alternative as any).distance?.toFixed(1)} km
+              </div>
+            </button>
+          </div>
           )}
 
           {/* Najlepszy Wybór */}
           {recommendations.best && (
-          <button 
-            onClick={() => handleNavigate(recommendations.best!)}
-            className="flex-1 bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/40 border-r-black/40 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden group"
-          >
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500/40 blur-[50px] rounded-full pointer-events-none group-hover:bg-green-400/50 transition-colors" />
-            <div className="text-green-400 text-[10px] uppercase tracking-wider font-extrabold relative z-10 drop-shadow-md">Najlepszy Wybór</div>
-            <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center relative z-10 drop-shadow-md">{recommendations.best.name}</div>
-            <div className="flex flex-col gap-2 w-full mt-1 relative z-10">
-              <div className="flex items-center justify-between bg-black/50 px-3 py-1.5 rounded-full border border-white/10 shadow-inner">
-                <span className="text-white/70 text-xs font-semibold">Punkty</span>
-                <span className="text-white font-bold text-sm bg-green-500/20 px-2 py-0.5 rounded-full text-green-400">{recommendations.best.points} pkt</span>
+          <div className="flex-1 relative group">
+            <div className="absolute -inset-2 bg-green-500/30 blur-[30px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
+            <button 
+              onClick={() => handleNavigate(recommendations.best!)}
+              className="relative w-full h-full bg-gradient-to-br from-white/10 to-black/40 backdrop-blur-md border border-t-white/40 border-l-white/20 border-b-black/60 border-r-black/60 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_10px_rgba(0,0,0,0.6),0_20px_40px_rgba(0,0,0,0.6)]"
+            >
+              <div className="text-green-400 text-[10px] uppercase tracking-wider font-extrabold drop-shadow-md">Najlepszy Wybór</div>
+              <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-lg">{recommendations.best.name}</div>
+              <div className="flex flex-col gap-2 w-full mt-1">
+                <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-full border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
+                  <span className="text-white/70 text-xs font-semibold">Punkty</span>
+                  <span className="text-white font-bold text-sm bg-green-500/20 px-2 py-0.5 rounded-full text-green-400 border border-green-500/30 drop-shadow-md">{recommendations.best.points} pkt</span>
+                </div>
+                <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-full border border-white/10 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
+                  <span className="text-white/70 text-xs font-semibold">Trasa</span>
+                  <span className="text-white font-bold flex items-center gap-1 text-sm">
+                    <Navigation size={12} className="text-green-400 drop-shadow-md" />
+                    {routes.bestDist !== null ? routes.bestDist.toFixed(1) : (recommendations.best as any).distance?.toFixed(1)} km
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between bg-black/50 px-3 py-1.5 rounded-full border border-white/10 shadow-inner">
-                <span className="text-white/70 text-xs font-semibold">Trasa</span>
-                <span className="text-white font-bold flex items-center gap-1 text-sm">
-                  <Navigation size={12} className="text-green-400" />
-                  {routes.bestDist !== null ? routes.bestDist.toFixed(1) : (recommendations.best as any).distance?.toFixed(1)} km
-                </span>
-              </div>
-            </div>
-          </button>
+            </button>
+          </div>
           )}
         </div>
       </div>
