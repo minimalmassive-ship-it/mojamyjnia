@@ -305,10 +305,10 @@ function App() {
                 )}
                 style={{
                   backgroundImage: mapStyle === 'standard' 
-                    ? "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/5384/9260')" 
+                    ? "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/18/86151/146381')" 
                     : mapStyle === 'satellite'
-                    ? "url('https://a.basemaps.cartocdn.com/dark_all/14/9260/5384.png')"
-                    : "url('https://a.tile.openstreetmap.org/14/9260/5384.png')"
+                    ? "url('https://a.basemaps.cartocdn.com/dark_all/18/146381/86151.png')"
+                    : "url('https://a.tile.openstreetmap.org/18/146381/86151.png')"
                 }}
               />
               <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-xl pointer-events-none" />
