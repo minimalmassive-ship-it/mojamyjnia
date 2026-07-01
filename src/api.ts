@@ -55,6 +55,34 @@ const DEFAULT_FEATURES: WashFeatures = {
   hasChanger: false,
 };
 
+// Fetch ALL car washes in Poland from the local static JSON file for instant startup
+export async function fetchStationsOffline(): Promise<WashStation[]> {
+  try {
+    const response = await fetch('/poland.json');
+    if (!response.ok) {
+      console.error("Brak pliku poland.json");
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    const osmStations: WashStation[] = data.elements.map((el: any) => ({
+      id: el.id.toString(),
+      name: el.tags?.name || 'Myjnia bez nazwy',
+      lat: el.center?.lat || el.lat,
+      lng: el.center?.lon || el.lon,
+      features: { ...DEFAULT_FEATURES },
+      points: calculatePoints(DEFAULT_FEATURES),
+      isRated: false,
+    }));
+
+    return osmStations;
+  } catch (error) {
+    console.error("Błąd ładowania pliku poland.json:", error);
+    return [];
+  }
+}
+
 export async function fetchStationsNearby(lat: number, lng: number): Promise<WashStation[]> {
   try {
     const query = `[out:json][timeout:25];
