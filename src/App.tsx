@@ -294,12 +294,24 @@ function App() {
                   return 'standard';
                 });
               }}
-              className="bg-dark-surface/90 backdrop-blur-md border border-dark-border p-3.5 rounded-xl shadow-lg active:scale-95 transition-transform shrink-0"
+              className="relative w-12 h-12 rounded-xl shadow-xl border-2 border-white/20 active:scale-95 transition-transform shrink-0 overflow-hidden group"
               title="Zmień styl mapy"
             >
-              {mapStyle === 'standard' && <Globe size={20} className="text-brand-blue" />}
-              {mapStyle === 'satellite' && <Moon size={20} className="text-brand-blue" />}
-              {mapStyle === 'dark' && <Sun size={20} className="text-brand-blue" />}
+              <div 
+                className={twMerge(
+                  "absolute inset-0 bg-cover bg-center transition-all duration-300",
+                  mapStyle === 'satellite' ? "brightness-[3] contrast-[1.5]" : "",
+                  mapStyle === 'dark' ? "brightness-95 contrast-125 saturate-50" : ""
+                )}
+                style={{
+                  backgroundImage: mapStyle === 'standard' 
+                    ? "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/5384/9260')" 
+                    : mapStyle === 'satellite'
+                    ? "url('https://a.basemaps.cartocdn.com/dark_all/14/9260/5384.png')"
+                    : "url('https://a.tile.openstreetmap.org/14/9260/5384.png')"
+                }}
+              />
+              <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-xl pointer-events-none" />
             </button>
 
             <button 
