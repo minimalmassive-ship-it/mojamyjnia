@@ -220,6 +220,7 @@ const MarkersLayer = ({ stations, onNavigate, onSurveyOpen }: {
                   <FeatureRow label="Bilon" value={station.features.acceptsCoins} isRated={!!station.isRated} />
                   <FeatureRow label="Banknoty" value={station.features.acceptsBanknotes} isRated={!!station.isRated} />
                   <FeatureRow label="Karta" value={station.features.acceptsCards} isRated={!!station.isRated} />
+                  <FeatureRow label="Żetony" value={station.features.acceptsTokens} isRated={!!station.isRated} />
                   <FeatureRow label="Rozmieniarka" value={station.features.hasChanger} isRated={!!station.isRated} />
                 </div>
 
