@@ -90,6 +90,9 @@ export async function fetchStationsNearby(lat: number, lng: number): Promise<Was
   node["amenity"="car_wash"](around:20000,${lat},${lng});
   way["amenity"="car_wash"](around:20000,${lat},${lng});
   relation["amenity"="car_wash"](around:20000,${lat},${lng});
+  node["car_wash"="yes"](around:20000,${lat},${lng});
+  way["car_wash"="yes"](around:20000,${lat},${lng});
+  relation["car_wash"="yes"](around:20000,${lat},${lng});
 );
 out center;`;
 

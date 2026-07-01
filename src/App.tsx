@@ -447,7 +447,7 @@ function App() {
       {(deferredPrompt || isIOS) && (
         <button
           onClick={handleInstallClick}
-          className="absolute top-[130px] sm:top-28 right-4 z-10 bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 p-4 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-all flex items-center justify-center pointer-events-auto group text-brand-blue"
+          className="absolute top-[160px] sm:top-36 right-4 z-10 bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 p-4 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-all flex items-center justify-center pointer-events-auto group text-brand-blue"
         >
           <Download size={22} className="drop-shadow-md" />
           <span className="max-w-0 overflow-hidden group-hover:max-w-[200px] group-hover:ml-3 transition-all duration-300 ease-in-out whitespace-nowrap font-black tracking-tight text-sm text-white drop-shadow-md">
