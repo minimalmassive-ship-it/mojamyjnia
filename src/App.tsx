@@ -340,6 +340,43 @@ function App() {
     }
   };
 
+  const mapButton = (className = '') => (
+    <button 
+      onClick={() => {
+        setMapStyle(prev => {
+          if (prev === 'standard') return 'satellite';
+          if (prev === 'satellite') return 'dark';
+          return 'standard';
+        });
+      }}
+      className={`relative w-[52px] h-[52px] rounded-full shadow-[0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 overflow-hidden group border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 ${className}`}
+      title="Zmień styl mapy"
+    >
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-all duration-300"
+        style={{
+          transform: mapStyle === 'standard' ? "scale(3.0)" : "scale(1.4)",
+          backgroundImage: mapStyle === 'standard' 
+            ? "url('/map-thumb-sat.png')" 
+            : mapStyle === 'satellite'
+            ? "url('/map-thumb-dark.png')"
+            : "url('/map-thumb-light.png')"
+        }}
+      />
+      <div className="absolute inset-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5)] bg-black/10 rounded-full pointer-events-none" />
+    </button>
+  );
+
+  const filterButton = (className = '') => (
+    <button 
+      onClick={() => setShowSearch(true)}
+      className={`relative w-[52px] h-[52px] flex items-center justify-center bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 z-10 ${className}`}
+      title="Filtry"
+    >
+      <SlidersHorizontal size={20} className="text-white drop-shadow-md" />
+    </button>
+  );
+
   return (
     <div className="relative w-full h-screen font-sans overflow-hidden bg-dark-bg text-gray-100 flex flex-col">
       {isLoading ? (
@@ -369,49 +406,26 @@ function App() {
         </div>
       )}
 
-      {/* Header */}
+      {/* Header Container */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-dark-bg/90 to-transparent pointer-events-none">
-        <div className="flex flex-col gap-3 w-full pointer-events-auto">
-          {/* Top Row: Logo & Map Button */}
-          <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col sm:flex-row items-center sm:justify-center w-full relative min-h-[52px] pointer-events-auto">
+          
+          {/* Logo & Mobile Map Button */}
+          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto sm:absolute sm:left-0">
             <div className="flex items-center gap-3">
               <img src="/favicon.svg" alt="Logo" className="w-10 h-10 drop-shadow-xl" />
               <h1 
-                className="text-3xl font-black tracking-tighter text-white"
+                className="text-3xl font-black tracking-tighter text-white whitespace-nowrap"
                 style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6), 0 -1px 1px rgba(255,255,255,0.5)" }}
               >
                 <span className="text-brand-blue" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,100,255,0.6), 0 -1px 1px rgba(255,255,255,0.5)" }}>JANOSIK</span> UMYTY
               </h1>
             </div>
-
-            <button 
-              onClick={() => {
-                setMapStyle(prev => {
-                  if (prev === 'standard') return 'satellite';
-                  if (prev === 'satellite') return 'dark';
-                  return 'standard';
-                });
-              }}
-              className="relative w-[52px] h-[52px] rounded-full shadow-[0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 overflow-hidden group border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40"
-              title="Zmień styl mapy"
-            >
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-all duration-300"
-                style={{
-                  transform: mapStyle === 'standard' ? "scale(3.0)" : "scale(1.4)",
-                  backgroundImage: mapStyle === 'standard' 
-                    ? "url('/map-thumb-sat.png')" 
-                    : mapStyle === 'satellite'
-                    ? "url('/map-thumb-dark.png')"
-                    : "url('/map-thumb-light.png')"
-                }}
-              />
-              <div className="absolute inset-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5)] bg-black/10 rounded-full pointer-events-none" />
-            </button>
+            {mapButton("sm:hidden")}
           </div>
 
-          {/* Bottom Row: Search & Filters */}
-          <div className="flex flex-nowrap items-center gap-2 w-full relative">
+          {/* Search Bar & Mobile Filter Button */}
+          <div className="w-full sm:w-[350px] mt-3 sm:mt-0 flex gap-2">
             <form onSubmit={handleCitySearch} className="flex flex-1 bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
               <div className="pl-4 py-3 flex items-center text-gray-200">
                 <MapPin size={18} className="drop-shadow-md" />
@@ -431,15 +445,15 @@ function App() {
                 <Search size={20} className="drop-shadow-md" />
               </button>
             </form>
-
-            <button 
-              onClick={() => setShowSearch(true)}
-              className="relative w-[52px] h-[52px] flex items-center justify-center bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 z-10"
-              title="Filtry"
-            >
-              <SlidersHorizontal size={20} className="text-white drop-shadow-md" />
-            </button>
+            {filterButton("sm:hidden")}
           </div>
+
+          {/* Desktop Filter & Map buttons */}
+          <div className="hidden sm:flex items-center gap-3 absolute right-0">
+            {filterButton()}
+            {mapButton()}
+          </div>
+
         </div>
       </div>
 
@@ -447,7 +461,7 @@ function App() {
       {(deferredPrompt || isIOS) && (
         <button
           onClick={handleInstallClick}
-          className="absolute top-[144px] right-4 z-10 w-[52px] h-[52px] bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform flex items-center justify-center pointer-events-auto group text-brand-blue"
+          className="sm:hidden absolute top-[144px] right-4 z-10 w-[52px] h-[52px] bg-black/20 backdrop-blur-sm border border-t-white/40 border-l-white/30 border-b-black/40 border-r-black/40 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_6px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform flex items-center justify-center pointer-events-auto group text-brand-blue"
           title="Pobierz Aplikację"
         >
           <Download size={22} className="drop-shadow-md text-white" />
