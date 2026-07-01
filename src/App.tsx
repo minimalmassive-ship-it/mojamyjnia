@@ -300,7 +300,7 @@ function App() {
               <div 
                 className="absolute inset-0 bg-cover bg-center transition-all duration-300"
                 style={{
-                  transform: mapStyle === 'standard' ? "scale(1.9)" : "scale(1.4)",
+                  transform: mapStyle === 'standard' ? "scale(3.0)" : "scale(1.4)",
                   backgroundImage: mapStyle === 'standard' 
                     ? "url('/map-thumb-sat.png')" 
                     : mapStyle === 'satellite'
