@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapComponent } from './components/Map';
 import { fetchStationsNearby, submitSurvey, type WashStation, calculatePoints, geocodeCity } from './api';
 import { calculateDistance } from './utils/distance';
-import { Search, Navigation, X, Trophy, Check, Download, MapPin } from 'lucide-react';
+import { Search, Navigation, X, Trophy, Check, Download, MapPin, AlertTriangle } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const WARSAW_CENTER: [number, number] = [52.2297, 21.0122];
@@ -11,6 +11,7 @@ function App() {
   const [userLoc, setUserLoc] = useState<[number, number]>(WARSAW_CENTER);
   const [mapCenter, setMapCenter] = useState<[number, number]>(WARSAW_CENTER);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   
   const [routes, setRoutes] = useState<{
     bestCoords: [number, number][] | null;
@@ -71,6 +72,8 @@ function App() {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const accuracy = position.coords.accuracy;
+          
+          setGpsAccuracy(accuracy);
           
           // Update user location marker continuously as accuracy improves
           setUserLoc([lat, lng]);
@@ -328,6 +331,13 @@ function App() {
         </div>
       )}
 
+      {gpsAccuracy && gpsAccuracy > 300 && (
+        <div className="absolute top-24 left-4 right-4 z-50 bg-slate-900/90 backdrop-blur-md border border-red-500/50 rounded-xl p-3 text-white text-xs text-left shadow-2xl pointer-events-auto flex items-center gap-3">
+          <AlertTriangle size={20} className="text-red-400 shrink-0" />
+          <span><b>Słaby sygnał GPS ({Math.round(gpsAccuracy)}m).</b> Wejdź w Ustawienia Telefonu &rarr; Aplikacje &rarr; Chrome &rarr; Lokalizacja, i upewnij się że masz zaznaczoną opcję <b>"Dokładna lokalizacja"</b>.</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-dark-bg/90 to-transparent pointer-events-none">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pointer-events-auto">
@@ -339,8 +349,8 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.3)] focus-within:border-brand-blue transition-colors">
-              <div className="pl-3 py-3 flex items-center text-gray-300">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.5)] focus-within:border-brand-blue transition-colors">
+              <div className="pl-3 py-3 flex items-center text-gray-400">
                 <MapPin size={18} />
               </div>
               <input 
@@ -348,7 +358,7 @@ function App() {
                 placeholder="Miasto, ulica..." 
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-400"
+                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-400 font-medium"
               />
               <button 
                 type="submit" 
@@ -386,9 +396,9 @@ function App() {
 
             <button 
               onClick={() => setShowSearch(true)}
-              className="bg-white/10 backdrop-blur-2xl border border-white/20 p-3.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] active:scale-95 transition-transform shrink-0"
+              className="bg-slate-900/60 backdrop-blur-xl border border-white/10 p-3.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] active:scale-95 transition-transform shrink-0"
             >
-              <Search size={20} className="text-white" />
+              <Search size={20} className="text-brand-blue" />
             </button>
           </div>
         </div>
@@ -414,14 +424,14 @@ function App() {
           {recommendations.alternative && (
           <button 
             onClick={() => handleNavigate(recommendations.alternative!)}
-            className="flex-1 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_8px_30px_rgb(0,0,0,0.3)]"
+            className="flex-1 bg-cyan-950/60 backdrop-blur-xl border border-cyan-500/40 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_8px_30px_rgba(6,182,212,0.3)]"
           >
             <div className="text-cyan-400 text-xs uppercase tracking-wider font-bold text-center">
               {recommendations.alternativeTitle}
               {recommendations.alternativeReason && <div className="text-[10px] text-cyan-200 mt-0.5">{recommendations.alternativeReason}</div>}
             </div>
             <div className="text-lg font-bold text-white text-center leading-tight h-10 flex items-center justify-center">{recommendations.alternative.name}</div>
-            <div className="text-cyan-400 font-bold flex items-center gap-1">
+            <div className="text-cyan-400 font-bold flex items-center gap-1 bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-500/20 shadow-inner">
               <Navigation size={14} />
               {routes.altDist !== null ? routes.altDist.toFixed(1) : (recommendations.alternative as any).distance?.toFixed(1)} km
             </div>
@@ -432,16 +442,16 @@ function App() {
           {recommendations.best && (
           <button 
             onClick={() => handleNavigate(recommendations.best!)}
-            className="flex-1 bg-white/15 backdrop-blur-2xl border border-white/30 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_8px_30px_rgba(34,197,94,0.3)] relative overflow-hidden"
+            className="flex-1 bg-green-950/60 backdrop-blur-xl border border-green-500/40 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[0_8px_30px_rgba(34,197,94,0.3)] relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/20 blur-3xl rounded-full" />
             <div className="text-green-400 text-xs uppercase tracking-wider font-bold">Najlepszy Wybór</div>
-            <div className="text-lg font-bold text-white text-center leading-tight h-10">{recommendations.best.name}</div>
+            <div className="text-lg font-bold text-white text-center leading-tight h-10 flex items-center justify-center">{recommendations.best.name}</div>
             <div className="flex items-center gap-2">
-              <div className="text-white font-bold bg-green-600 px-2 py-0.5 rounded-md text-sm">
+              <div className="text-white font-bold bg-green-600 px-2 py-0.5 rounded-md text-sm shadow-inner">
                 {recommendations.best.points} pkt
               </div>
-              <div className="text-green-400 font-bold flex items-center gap-1 text-sm">
+              <div className="text-green-400 font-bold flex items-center gap-1 text-sm bg-green-950/50 px-3 py-1 rounded-full border border-green-500/20 shadow-inner">
                 <Navigation size={14} />
                 {routes.bestDist !== null ? routes.bestDist.toFixed(1) : (recommendations.best as any).distance?.toFixed(1)} km
               </div>
