@@ -181,20 +181,29 @@ function App() {
       points: calculatePoints(s.features)
     }));
 
-    // Najlepszy wybór = highest points, then closest
-    const best = [...stationsWithDist].sort((a, b) => {
+    // Ograniczamy wyszukiwanie do rozsądnego promienia (np. 15 km)
+    let nearbyStations = stationsWithDist.filter(s => s.distance <= 15);
+    if (nearbyStations.length === 0) {
+      nearbyStations = stationsWithDist.filter(s => s.distance <= 50);
+    }
+    if (nearbyStations.length === 0) {
+      nearbyStations = stationsWithDist; // ostateczność
+    }
+
+    // Najlepszy wybór = highest points w promieniu, then closest
+    const best = [...nearbyStations].sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       return a.distance - b.distance;
     })[0];
 
     // Szybka alternatywa = closest
-    let alternative = [...stationsWithDist].sort((a, b) => a.distance - b.distance)[0];
+    let alternative = [...nearbyStations].sort((a, b) => a.distance - b.distance)[0];
     let alternativeTitle = 'Alternatywa';
     let alternativeReason = '';
 
     if (best && alternative && best.id === alternative.id) {
       // Best is also the closest. Let's find the next closest as alternative
-      alternative = [...stationsWithDist].filter(s => s.id !== best.id).sort((a, b) => a.distance - b.distance)[0];
+      alternative = [...nearbyStations].filter(s => s.id !== best.id).sort((a, b) => a.distance - b.distance)[0];
       if (alternative) {
         if (!alternative.isRated) {
            alternativeTitle = 'Nieodkryta alternatywa';
@@ -349,7 +358,7 @@ function App() {
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto relative">
-            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
+            <form onSubmit={handleCitySearch} className="flex flex-1 sm:w-64 bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/50 border-r-black/50 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] focus-within:ring-2 focus-within:ring-brand-blue/50 transition-all relative z-10">
               <div className="pl-4 py-3 flex items-center text-gray-400">
                 <MapPin size={18} />
               </div>
@@ -358,7 +367,7 @@ function App() {
                 placeholder="Miasto, ulica..." 
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-500 font-bold"
+                className="w-full bg-transparent border-none outline-none text-white px-3 py-3 text-sm placeholder-gray-400 font-bold"
               />
               <button 
                 type="submit" 
@@ -377,15 +386,26 @@ function App() {
                   return 'standard';
                 });
               }}
-              className="bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] active:scale-95 transition-transform shrink-0 relative z-10 flex items-center justify-center"
+              className="relative w-[52px] h-[52px] rounded-full shadow-[0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 overflow-hidden group border border-t-white/30 border-l-white/20 border-b-black/50 border-r-black/50"
               title="Zmień styl mapy"
             >
-              <Layers size={20} className={mapStyle === 'standard' ? 'text-gray-400' : mapStyle === 'satellite' ? 'text-green-400' : 'text-blue-400'} />
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-all duration-300"
+                style={{
+                  transform: mapStyle === 'standard' ? "scale(3.0)" : "scale(1.4)",
+                  backgroundImage: mapStyle === 'standard' 
+                    ? "url('/map-thumb-sat.png')" 
+                    : mapStyle === 'satellite'
+                    ? "url('/map-thumb-dark.png')"
+                    : "url('/map-thumb-light.png')"
+                }}
+              />
+              <div className="absolute inset-0 shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-4px_8px_rgba(0,0,0,0.5)] rounded-full pointer-events-none" />
             </button>
 
             <button 
               onClick={() => setShowSearch(true)}
-              className="bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] active:scale-95 transition-transform shrink-0 relative z-10"
+              className="bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/50 border-r-black/50 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-transform shrink-0 relative z-10"
             >
               <Search size={20} className="text-white drop-shadow-md" />
             </button>
@@ -397,7 +417,7 @@ function App() {
       {(deferredPrompt || isIOS) && (
         <button
           onClick={handleInstallClick}
-          className="absolute top-40 sm:top-28 right-4 z-10 bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.8),_0_15px_30px_rgba(0,0,0,0.8)] active:scale-95 transition-all flex items-center justify-center pointer-events-auto group text-brand-blue"
+          className="absolute top-40 sm:top-28 right-4 z-10 bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/50 border-r-black/50 p-4 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.5),_0_15px_30px_rgba(0,0,0,0.6)] active:scale-95 transition-all flex items-center justify-center pointer-events-auto group text-brand-blue"
         >
           <Download size={22} className="drop-shadow-md" />
           <span className="max-w-0 overflow-hidden group-hover:max-w-[200px] group-hover:ml-3 transition-all duration-300 ease-in-out whitespace-nowrap font-black tracking-tight text-sm text-white drop-shadow-md">
@@ -415,7 +435,7 @@ function App() {
             <div className="absolute -inset-2 bg-cyan-500/30 blur-[30px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
             <button 
               onClick={() => handleNavigate(recommendations.alternative!)}
-              className="relative w-full h-full bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_10px_rgba(0,0,0,0.8),0_20px_40px_rgba(0,0,0,0.8)]"
+              className="relative w-full h-full bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/50 border-r-black/50 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_10px_rgba(0,0,0,0.5),0_20px_40px_rgba(0,0,0,0.6)]"
             >
               <div className="text-cyan-400 text-[10px] uppercase tracking-wider font-extrabold text-center drop-shadow-md">
                 {recommendations.alternativeTitle}
@@ -436,7 +456,7 @@ function App() {
             <div className="absolute -inset-2 bg-green-500/30 blur-[30px] rounded-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity" />
             <button 
               onClick={() => handleNavigate(recommendations.best!)}
-              className="relative w-full h-full bg-black/80 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/80 border-r-black/80 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_10px_rgba(0,0,0,0.8),0_20px_40px_rgba(0,0,0,0.8)]"
+              className="relative w-full h-full bg-black/40 backdrop-blur-md border border-t-white/30 border-l-white/20 border-b-black/50 border-r-black/50 rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-[inset_0_2px_4px_rgba(255,255,255,0.2),inset_0_-4px_10px_rgba(0,0,0,0.5),0_20px_40px_rgba(0,0,0,0.6)]"
             >
               <div className="text-green-400 text-[10px] uppercase tracking-wider font-extrabold drop-shadow-md">Najlepszy Wybór</div>
               <div className="text-lg font-black text-white text-center leading-tight h-10 flex items-center justify-center drop-shadow-lg">{recommendations.best.name}</div>
