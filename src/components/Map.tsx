@@ -215,7 +215,7 @@ export const MapComponent: React.FC<{
   userLocation: [number, number];
   hasLocationPermission: boolean;
   stations: WashStation[];
-  mapStyle: 'standard' | 'dark' | 'satellite';
+  mapStyle: 'standard' | 'satellite';
   onNavigate: (station: WashStation) => void;
   onSurveyOpen: (station: WashStation) => void;
 }> = ({ mapCenter, userLocation, hasLocationPermission, stations, mapStyle, onNavigate, onSurveyOpen }) => {
@@ -232,14 +232,8 @@ export const MapComponent: React.FC<{
         
         {mapStyle === 'standard' && (
           <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
-        )}
-        
-        {mapStyle === 'dark' && (
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
           />
         )}
 
